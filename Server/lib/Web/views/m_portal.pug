@@ -1,0 +1,74 @@
+//-
+	Rule the words! KKuTu Online
+	Copyright (C) 2017 JJoriping(op@jjo.kr)
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+extends m_layout
+
+block Subject
+	title= L('title')
+
+block CSS
+	link(rel='stylesheet', href='/css/in_game_kkutu.css')
+	link(rel='stylesheet', href='/css/in_portal.css')
+
+block JS
+	script(type='text/javascript', src='/js/in_portal.min.js')
+
+block Middle
+	div#portal-container
+		div#portal-top
+			div#language-selector
+				+FA('language')
+				select#locale-select
+					option(value='ko_KR', selected=(lang == 'ko_KR')) 한국어
+					option(value='en_US', selected=(lang == 'en_US')) English
+					option(value='ja_JP', selected=(lang == 'ja_JP')) 日本語
+
+		div#portal-center
+			div.logo-container
+				h3#holder= L('title').replace(/\[.+?\]/g, "")
+				img#logo(src='/img/kkutu/short_logo.png')
+			
+			div.jjoriping-container
+				div.jjoriping
+					img.jjoObj.jjoEyeL(src='/img/jjoeyeL.png')
+					img.jjoObj.jjoNose(src='/img/jjonose.png')
+					img.jjoObj.jjoEyeR(src='/img/jjoeyeR.png')
+					div.jjoDisplayBar
+						button#game-start.jjo-display= L('gameStart')
+
+		div#portal-bottom
+			div.server-section
+				div.server-list-box
+					h3.server-list-title
+						a#server-refresh
+							+FA('refresh')
+							+Expl(L('serverRefresh'))
+						label= L('serverList')
+						label#server-total(style='color: #AAA; font-size: 13px;')
+					div#server-list
+			
+			div.menu-section
+				div#menu-bar
+
+	div(style='float: left; width: calc(100% - 4px); border: 2px solid #CCC; margin-top: 20px; background-color: #EEE; text-align: center; padding: 15px 0;')
+		a(target='_blank', href='https://github.com/jeong-jimin-github/KKuTu', style='color: #333; text-decoration: none; font-weight: bold; font-size: 18px;')
+			+FA('github')
+			|  #{L('checkChangesOnGithub')}
+	+separator(10)
+
+block Bottom
+	div.bottom-legal!= L('dictionarySupport')
+	div.bottom-legal!= L('etcSupport')

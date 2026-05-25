@@ -1,0 +1,58 @@
+//-
+	Rule the words! KKuTu Online
+	Copyright (C) 2017 JJoriping(op@jjo.kr)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+//-
+	볕뉘 수정사항:
+	* Login 을 Passport 로 수행하기 위한 수정
+
+include module
+
+doctype html
+html
+	head
+		title= L('title')
+		+PageHead()
+	body
+		span#locale= JSON.stringify(LANG)
+		//볕뉘 수정 구문삭제(30)
+		div.login-with= locals.text ? L(locals.text) : L('loginWith')
+		
+		div.local-login-container
+			form(action="/login/local" method="POST").local-login-form
+				input(type="text" name="username" placeholder=L('username') required)
+				input(type="password" name="password" placeholder=L('password') required)
+				div.auto-login-container
+					input(type="checkbox" name="remember" id="remember")
+					label(for="remember")= L('autoLogin')
+				button(type="submit" style="background-color: #4A90E2; color: white;")= L('login')
+			
+			hr(style="border: 0; border-top: 1px solid #444; margin: 10px 0; width: 100%;")
+			
+			form(action="/register" method="POST").local-login-form
+				input(type="text" name="username" placeholder=L('username') required)
+				input(type="password" name="password" placeholder=L('password') required)
+				input(type="password" name="passwordConfirm" placeholder=L('password') + " " + L('OK') required)
+				button(type="submit" style="background-color: #555; color: white;")= L('register')
+				div.local-register-rule= L('registerRule')
+
+		hr(style="border: 0; border-top: 1px solid #444; margin: 20px auto; width: 200px;")
+
+		//볕뉘 수정
+		each val in loginList
+			a(href="/login/" + val.vendor)
+				button(style="color: " + val.fontColor + "; background-color: " + val.color + ";")= L(val.displayName)
+		//볕뉘 수정 끝
+		div.login-legal!= L('loginLegal')
