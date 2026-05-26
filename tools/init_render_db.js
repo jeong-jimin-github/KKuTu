@@ -14,6 +14,7 @@ const Os = require("os");
 const Path = require("path");
 const Readline = require("readline");
 const Zlib = require("zlib");
+const ChildProcess = require("child_process");
 
 let Pool;
 
@@ -24,6 +25,10 @@ try {
 }
 
 const DATABASE_URL = process.env.DATABASE_URL;
+const ARGS = process.argv.slice(2);
+const BACKGROUND_IMPORT = ARGS.indexOf("--background-import") != -1;
+const IMPORT_ONLY = ARGS.indexOf("--import-only") != -1;
+const SCHEMA_ONLY = ARGS.indexOf("--schema-only") != -1;
 const ROOT = Path.resolve(__dirname, "..");
 const LOCAL_DB_SQL = Path.join(ROOT, "db.sql");
 const DEFAULT_DB_SQL_URL = "https://raw.githubusercontent.com/JJoriping/KKuTu/master/db.sql";
@@ -33,6 +38,7 @@ const HF_MAL_CSV = "https://huggingface.co/datasets/lyfesan/myanimelist-top-anim
 const TMP_DB_SQL = Path.join(Os.tmpdir(), "kkutu-db.sql");
 const TMP_JMDICT = Path.join(Os.tmpdir(), "JMdict_e.gz");
 const BATCH_ROWS = 500;
+const IMPORT_LOCK_ID = 26052601;
 
 if(!DATABASE_URL){
 	console.log("[init-db] DATABASE_URL is not set; skipping PostgreSQL bootstrap.");
@@ -156,6 +162,12 @@ CREATE TABLE IF NOT EXISTS ip_block (
 	"ipBlockedUntil" bigint DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS kkutu_bootstrap_state (
+	_id varchar(256) PRIMARY KEY,
+	value text,
+	"updatedAt" bigint
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_server ON users(server);
 CREATE INDEX IF NOT EXISTS idx_session_profile_id ON "session" ((profile->>'id'));
 CREATE INDEX IF NOT EXISTS idx_kkutu_ko_hit ON kkutu_ko(hit);
@@ -177,6 +189,12 @@ const IMPORT_TABLES = {
 	kkutu_shop: true,
 	kkutu_shop_desc: true
 };
+const REQUIRED_DUMP_TABLES = [
+	"kkutu_ko",
+	"kkutu_en",
+	"kkutu_shop",
+	"kkutu_shop_desc"
+];
 const PRIMARY_KEY_TABLES = {
 	kkutu_ko: true,
 	kkutu_en: true,
@@ -259,8 +277,8 @@ function sourceList(){
 	});
 	return out;
 }
-function shouldImportTable(table, counts){
-	return IMPORT_TABLES[table] && (!counts[table] || counts[table] == 0);
+function shouldImportTable(table, completed){
+	return IMPORT_TABLES[table] && !completed[table];
 }
 function unquoteIdent(raw){
 	raw = String(raw || "").trim();
@@ -385,7 +403,28 @@ async function flushRows(state){
 		console.log(`[init-db] Imported ${state.imported} rows into ${state.table}...`);
 	}
 }
-async function importCopyDump(file, counts){
+async function markComplete(key){
+	await pool.query(
+		`INSERT INTO kkutu_bootstrap_state (_id, value, "updatedAt") VALUES ($1, 'complete', $2)
+		ON CONFLICT (_id) DO UPDATE SET value='complete', "updatedAt"=EXCLUDED."updatedAt"`,
+		[ key, Date.now() ]
+	);
+}
+async function completedImports(){
+	const done = {};
+	const res = await pool.query("SELECT _id FROM kkutu_bootstrap_state WHERE value='complete'");
+	
+	res.rows.forEach(function(row){ done[row._id] = true; });
+	return done;
+}
+async function prepareIncompleteTable(table, counts){
+	if(PRIMARY_KEY_TABLES[table]) return;
+	if(!counts[table]) return;
+	console.log(`[init-db] Re-importing incomplete ${table}; truncating ${counts[table]} old rows first.`);
+	await pool.query(`TRUNCATE TABLE ${quoteIdent(table)}`);
+	counts[table] = 0;
+}
+async function importCopyDump(file, counts, completed){
 	const stream = Fs.createReadStream(file, { encoding: "utf8" });
 	const rl = Readline.createInterface({ input: stream, crlfDelay: Infinity });
 	const summary = {};
@@ -401,6 +440,9 @@ async function importCopyDump(file, counts){
 					await flushRows(state);
 					summary[state.table] = (summary[state.table] || 0) + state.imported;
 					counts[state.table] = (counts[state.table] || 0) + state.imported;
+					completed[state.table] = true;
+					await markComplete(state.table);
+					console.log(`[init-db] Completed ${state.table} import (${state.imported} rows scanned).`);
 				}
 				state = null;
 				skipping = false;
@@ -416,10 +458,11 @@ async function importCopyDump(file, counts){
 		}
 		header = copyHeader(line);
 		if(!header) continue;
-		if(!shouldImportTable(header.table, counts)){
+		if(!shouldImportTable(header.table, completed)){
 			skipping = true;
 			continue;
 		}
+		await prepareIncompleteTable(header.table, counts);
 		await ensureColumns(header.table, header.columns);
 		console.log(`[init-db] Importing ${header.table} from ${Path.basename(file)}...`);
 		state = {
@@ -493,7 +536,7 @@ function fetchText(url, maxBytes){
 		});
 	});
 }
-async function importSource(source, counts){
+async function importSource(source, counts, completed){
 	const file = source.type == "file" ? source.value : TMP_DB_SQL;
 	
 	if(source.type == "url"){
@@ -501,7 +544,7 @@ async function importSource(source, counts){
 		await downloadFile(source.value, file);
 		if(!fileLooksUsable(file)) throw new Error("Downloaded dump is not a usable SQL file: " + source.label);
 	}
-	return importCopyDump(file, counts);
+	return importCopyDump(file, counts, completed);
 }
 async function tableCounts(){
 	const counts = {};
@@ -516,8 +559,10 @@ async function tableCounts(){
 	}
 	return counts;
 }
-function needsDumpImport(counts){
-	return !counts.kkutu_ko || !counts.kkutu_en || !counts.kkutu_shop || !counts.kkutu_shop_desc || !counts.kkutu_ja;
+function needsDumpImport(counts, completed){
+	return REQUIRED_DUMP_TABLES.some(function(table){
+		return !completed[table] || !counts[table];
+	});
 }
 function toHiragana(text){
 	return (text || "").normalize("NFKC").replace(/[ァ-ヶ]/g, function(ch){
@@ -622,7 +667,7 @@ function jaRowsFromEntry(entry){
 	});
 	return Array.from(rows.values());
 }
-async function importJmdict(counts){
+async function importJmdict(counts, completed){
 	const columns = [ "_id", "type", "mean", "hit", "theme", "flag", "reading", "surface" ];
 	const source = process.env.JMDICT_URL || DEFAULT_JMDICT_URL;
 	const streamRows = { table: "kkutu_ja", columns: columns, rows: [], imported: 0 };
@@ -634,7 +679,7 @@ async function importJmdict(counts){
 	let i;
 	
 	if(flag("SKIP_JA_SEED")) return;
-	if(counts.kkutu_ja > 0) return;
+	if(completed.kkutu_ja && counts.kkutu_ja > 0) return;
 	console.log("[init-db] Downloading JMdict for Japanese seed: " + source);
 	await downloadFile(source, TMP_JMDICT);
 	await ensureColumns("kkutu_ja", columns);
@@ -671,6 +716,8 @@ async function importJmdict(counts){
 	});
 	await flushRows(streamRows);
 	counts.kkutu_ja = (counts.kkutu_ja || 0) + streamRows.imported;
+	completed.kkutu_ja = true;
+	await markComplete("kkutu_ja");
 	console.log(`[init-db] Imported ${streamRows.imported} JMdict rows into kkutu_ja.`);
 }
 function parseCsvRows(text){
@@ -806,29 +853,87 @@ async function seedJapaneseAnimeWords(){
 	console.log(`[init-db] Seeding ${rows.length} Japanese anime injeong words...`);
 	return insertSeedRows("kkutu_ja", [ "_id", "type", "mean", "hit", "theme", "flag", "reading", "surface" ], rows);
 }
-async function seedAnimeWords(){
+async function seedAnimeWords(completed){
 	let count;
 	
 	if(flag("SKIP_ANIME_SEED")) return;
 	try {
 		count = await janSeedCount("kkutu_ko");
-		if(count > 0){
+		if(completed.anime_ko && count > 0){
 			console.log("[init-db] Korean anime injeong seed already exists; skipping.");
 		}else{
 			await seedKoreanAnimeWords();
+			completed.anime_ko = true;
+			await markComplete("anime_ko");
 		}
 	} catch (err) {
 		console.warn("[init-db] Korean anime injeong seed failed: " + (err.stack || err.toString()));
 	}
 	try {
 		count = await janSeedCount("kkutu_ja");
-		if(count > 0){
+		if(completed.anime_ja && count > 0){
 			console.log("[init-db] Japanese anime injeong seed already exists; skipping.");
 		}else{
 			await seedJapaneseAnimeWords();
+			completed.anime_ja = true;
+			await markComplete("anime_ja");
 		}
 	} catch (err) {
 		console.warn("[init-db] Japanese anime injeong seed failed: " + (err.stack || err.toString()));
+	}
+}
+function startBackgroundImport(){
+	if(flag("SKIP_DB_IMPORT")){
+		console.log("[init-db] SKIP_DB_IMPORT is enabled; background import was not started.");
+		return;
+	}
+	const child = ChildProcess.spawn(process.execPath, [ __filename, "--import-only" ], {
+		cwd: ROOT,
+		env: process.env,
+		detached: true,
+		stdio: [ "ignore", "inherit", "inherit" ]
+	});
+	
+	child.unref();
+	console.log("[init-db] Background database import started (pid " + child.pid + ").");
+}
+async function tryImportLock(){
+	const res = await pool.query("SELECT pg_try_advisory_lock($1) AS locked", [ IMPORT_LOCK_ID ]);
+	return !!(res.rows[0] && res.rows[0].locked);
+}
+async function releaseImportLock(){
+	try {
+		await pool.query("SELECT pg_advisory_unlock($1)", [ IMPORT_LOCK_ID ]);
+	} catch (err) {
+		console.warn("[init-db] Failed to release import lock: " + err.toString());
+	}
+}
+async function runImport(){
+	let locked = false;
+	
+	if(flag("SKIP_DB_IMPORT")) return;
+	locked = await tryImportLock();
+	if(!locked){
+		console.log("[init-db] Another database import is already running; skipping this worker.");
+		return;
+	}
+	try {
+		const counts = await tableCounts();
+		const completed = await completedImports();
+		
+		if(needsDumpImport(counts, completed)){
+			for(const source of sourceList()){
+				await importSource(source, counts, completed);
+				if(!needsDumpImport(counts, completed)) break;
+			}
+		}else{
+			console.log("[init-db] Core dictionary tables are marked complete; skipping dump import.");
+		}
+		await importJmdict(counts, completed);
+		await seedAnimeWords(completed);
+		console.log("[init-db] Database import finished.");
+	} finally {
+		await releaseImportLock();
 	}
 }
 
@@ -836,20 +941,8 @@ async function seedAnimeWords(){
 	try {
 		await pool.query(TABLE_SQL);
 		console.log("[init-db] PostgreSQL tables are ready.");
-		if(!flag("SKIP_DB_IMPORT")){
-			const counts = await tableCounts();
-			
-			if(needsDumpImport(counts)){
-				for(const source of sourceList()){
-					await importSource(source, counts);
-					if(!needsDumpImport(counts)) break;
-				}
-				await importJmdict(counts);
-			}else{
-				console.log("[init-db] Dictionary tables already contain data; skipping import.");
-			}
-			await seedAnimeWords();
-		}
+		if(BACKGROUND_IMPORT) startBackgroundImport();
+		else if(IMPORT_ONLY || !SCHEMA_ONLY) await runImport();
 	} catch (err) {
 		console.error("[init-db] Failed to bootstrap PostgreSQL:");
 		console.error(err.stack || err.toString());
