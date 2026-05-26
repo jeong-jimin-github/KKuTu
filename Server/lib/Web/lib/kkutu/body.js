@@ -2580,6 +2580,10 @@ function setRoomHead($obj, room){
 }
 function loadSounds(list, callback){
 	$data._lsRemain = list.length;
+	if(!$data._lsRemain){
+		if(callback) callback();
+		return;
+	}
 	
 	list.forEach(function(v){
 		getAudio(v.key, v.value, callback);
@@ -2587,38 +2591,77 @@ function loadSounds(list, callback){
 }
 function getAudio(k, url, cb){
 	var req = new XMLHttpRequest();
+	var finished = false;
 	
 	req.open("GET", /*($data.PUBLIC ? "http://jjo.kr" : "") +*/ url);
 	req.responseType = "arraybuffer";
 	req.onload = function(e){
-		if(audioContext) audioContext.decodeAudioData(e.target.response, function(buf){
-			$sound[k] = buf;
-			done();
-		}, onErr); else onErr();
+		var decoded;
+
+		if(req.status && (req.status < 200 || req.status >= 300)) return onErr();
+		if(audioContext && e.target.response && e.target.response.byteLength){
+			try {
+				decoded = audioContext.decodeAudioData(e.target.response, function(buf){
+					$sound[k] = buf;
+					done();
+				}, onErr);
+				if(decoded && decoded.then){
+					decoded.then(function(buf){
+						$sound[k] = buf;
+						done();
+					}).catch(onErr);
+				}
+			} catch(err) {
+				onErr(err);
+			}
+		}else onErr();
 	};
+	req.onerror = onErr;
+	req.onabort = onErr;
 	function onErr(err){
-		$sound[k] = new AudioSound(url);
+		try {
+			$sound[k] = new AudioSound(url);
+		} catch(e) {
+			$sound[k] = new SilentSound();
+		}
 		done();
 	}
 	function done(){
+		if(finished) return;
+		finished = true;
 		if(--$data._lsRemain == 0){
 			if(cb) cb();
 		}else loading(L['loadRemain'] + $data._lsRemain);
+	}
+	function SilentSound(){
+		this.start = function(){};
+		this.stop = function(){};
 	}
 	function AudioSound(url){
 		var my = this;
 		
 		this.audio = new Audio(url);
-		this.audio.load();
+		try {
+			this.audio.load();
+		} catch(e) {}
 		this.start = function(){
-			my.audio.play();
+			try {
+				var played = my.audio.play();
+				if(played && played.catch) played.catch(function(){});
+			} catch(e) {}
 		};
 		this.stop = function(){
-			my.audio.currentTime = 0;
-			my.audio.pause();
+			try {
+				my.audio.currentTime = 0;
+				my.audio.pause();
+			} catch(e) {}
 		};
 	}
-	req.send();
+	try {
+		req.send();
+	} catch(err) {
+		onErr(err);
+	}
 }
 function playBGM(key, force){
 	if($data.bgm) $data.bgm.stop();
@@ -2636,26 +2679,43 @@ function playSound(key, loop){
 	var mute = (loop && $data.muteBGM) || (!loop && $data.muteEff);
 	
 	sound = $sound[key] || $sound.missing;
-	if(window.hasOwnProperty("AudioBuffer") && sound instanceof AudioBuffer){
-		src = audioContext.createBufferSource();
-		src.startedAt = audioContext.currentTime;
-		src.loop = loop;
-		if(mute){
-			src.buffer = audioContext.createBuffer(2, sound.length, audioContext.sampleRate);
-		}else{
-			src.buffer = sound;
+	if(!sound) sound = { start: function(){}, stop: function(){} };
+	if(audioContext && window.hasOwnProperty("AudioBuffer") && sound instanceof AudioBuffer){
+		try {
+			src = audioContext.createBufferSource();
+			src.startedAt = audioContext.currentTime;
+			src.loop = loop;
+			if(mute){
+				src.buffer = audioContext.createBuffer(2, sound.length, audioContext.sampleRate);
+			}else{
+				src.buffer = sound;
+			}
+			src.connect(audioContext.destination);
+		} catch(e) {
+			src = { start: function(){}, stop: function(){} };
 		}
-		src.connect(audioContext.destination);
 	}else{
-		if(sound.readyState) sound.audio.currentTime = 0;
-		sound.audio.loop = loop || false;
-		sound.audio.volume = mute ? 0 : 1;
-		src = sound;
+		try {
+			if(sound.audio){
+				sound.audio.currentTime = 0;
+				sound.audio.loop = loop || false;
+				sound.audio.volume = mute ? 0 : 1;
+			}
+			src = sound;
+		} catch(e) {
+			src = { start: function(){}, stop: function(){} };
+		}
 	}
-	if($_sound[key]) $_sound[key].stop();
+	if($_sound[key]){
+		try {
+			$_sound[key].stop();
+		} catch(e) {}
+	}
 	$_sound[key] = src;
 	src.key = key;
-	src.start();
+	try {
+		src.start();
+	} catch(e) {}
 	/*if(sound.readyState) sound.currentTime = 0;
 	sound.loop = loop || false;
 	sound.volume = ((loop && $data.muteBGM) || (!loop && $data.muteEff)) ? 0 : 1;
@@ -2666,7 +2726,11 @@ function playSound(key, loop){
 function stopAllSounds(){
 	var i;
 	
-	for(i in $_sound) $_sound[i].stop();
+	for(i in $_sound){
+		try {
+			$_sound[i].stop();
+		} catch(e) {}
+	}
 }
 function tryJoin(id){
 	var pw;

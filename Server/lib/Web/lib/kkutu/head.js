@@ -49,7 +49,13 @@ var $lib = { Classic: {}, Jaqwi: {}, Crossword: {}, Typing: {}, Hunmin: {}, Dane
 var $rec;
 var mobile;
 
-var audioContext = window.hasOwnProperty("AudioContext") ? (new AudioContext()) : false;
+var audioContext = false;
+try {
+	var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+	audioContext = AudioContextClass ? (new AudioContextClass()) : false;
+} catch(e) {
+	audioContext = false;
+}
 var _WebSocket = window['WebSocket'];
 var _setInterval = setInterval;
 var _setTimeout = setTimeout;
