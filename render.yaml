@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: cd Server/lib && npm install && npx grunt
-    startCommand: node Server/lib/Web/main.js
+    startCommand: node tools/init_render_db.js && node Server/lib/Web/main.js
     healthCheckPath: /health
     envVars:
       - key: UNIFIED_GAME
