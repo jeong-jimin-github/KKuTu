@@ -16,11 +16,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+function normalizeWebSocketURL(url){
+	if(!url) return url;
+	if(location.protocol == "https:" && url.indexOf("ws://") == 0) return "wss://" + url.slice(5);
+	if(location.protocol == "http:" && url.indexOf("wss://") == 0) return "ws://" + url.slice(6);
+	return url;
+}
+
 $(document).ready(function(){
 	var i;
 	
 	$data.PUBLIC = $("#PUBLIC").html() == "true";
-	$data.URL = $("#URL").html();
+	$data.URL = normalizeWebSocketURL($("#URL").html());
 	$data.version = $("#version").html();
 	$data.server = (location.href.match(/\?.*server=(\d+)/) || [ null, "0" ])[1];
 	$data.shop = {};

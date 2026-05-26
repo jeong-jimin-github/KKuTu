@@ -76,16 +76,17 @@ mixin PageHead(min)
 		};
 		var autoCss = pageAsset == "m_portal" ? null : pageAsset;
 		var autoScript = autoScripts[pageAsset] ? pageAsset : null;
+		var assetVersion = locals.assetVersion || "local";
 	if !min
 		link(rel='stylesheet', href=(locals.mobile && !locals.as_pc) ? '/css/m_style.css' : '/css/style.css')
 		link(rel='stylesheet', href='/css/fa.css')
 		link(rel='stylesheet', href='/css/expl.css')
-	script(type='text/javascript', src='/js/jquery.js')
-	script(type='text/javascript', src='/language/'+pageAsset+'/'+locals.lang)
+	script(type='text/javascript', src='/js/jquery.js?v='+assetVersion)
+	script(type='text/javascript', src='/language/'+pageAsset+'/'+locals.lang+'?v='+assetVersion)
 	
 	if PUBLIC && !SESSION.admin
 		//script(type='text/javascript', src='/js/google.js')
-	script(type='text/javascript', src='/js/global.min.js')
+	script(type='text/javascript', src='/js/global.min.js?v='+assetVersion)
 	if !min
 		//script(type='text/javascript', src='/js/facebook.js')
 	if block
@@ -93,7 +94,7 @@ mixin PageHead(min)
 	if autoCss
 		link(rel='stylesheet', href='/css/in_'+autoCss+'.css')
 	if autoScript
-		script(type='text/javascript', src='/js/in_'+autoScript+'.min.js')
+		script(type='text/javascript', src='/js/in_'+autoScript+'.min.js?v='+assetVersion)
 	
 mixin SearchBox(arg1, arg2)
 	meta(name='description', content=L('meta_desc', arg1, arg2))

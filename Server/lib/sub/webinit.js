@@ -23,6 +23,7 @@ var Language = {
 	'en_US': require("../Web/lang/en_US.json"),
 	'ja_JP': require("../Web/lang/ja_JP.json")
 };
+var ASSET_VERSION = process.env.RENDER_GIT_COMMIT || String(Date.now());
 
 function updateLanguage(){
 	var i, src;
@@ -76,6 +77,7 @@ function page(req, res, file, data){
 	// if(exports.STATIC) data.static = exports.STATIC[data.lang];
 	data.season = GLOBAL.SEASON;
 	data.season_pre = GLOBAL.SEASON_PRE;
+	data.assetVersion = ASSET_VERSION;
 	
 	data.locale = getLanguage(data.lang, data._page || file.split('_')[0], data._shop);
 	data.session = req.session;

@@ -58,6 +58,7 @@ WebInit.MOBILE_AVAILABLE = [
 require("../sub/checkpub");
 
 JLog.info("<< KKuTu Web >>");
+Server.set('trust proxy', true);
 Server.set('views', __dirname + "/views");
 Server.set('view engine', "pug");
 Server.use(Express.static(__dirname + "/public"));
@@ -245,10 +246,12 @@ Server.get("/", function(req, res){
 		}else{
 			delete req.session.profile;
 		}
-		var wsProto = Const.IS_SECURED ? 'wss' : 'ws';
+		var forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+		var wsProto = (Const.IS_SECURED || req.secure || forwardedProto == 'https') ? 'wss' : 'ws';
+		var host = req.get('host') || req.hostname;
 		var wsUrl = UNIFIED_GAME
-			? `${wsProto}://${req.hostname}/game/0/${id}`
-			: `${wsProto}://${GLOBAL.GAME_SERVER_HOST || req.hostname}:${Const.MAIN_PORTS[server || 0]}/${id}`;
+			? `${wsProto}://${host}/game/0/${id}`
+			: `${wsProto}://${GLOBAL.GAME_SERVER_HOST || host}:${Const.MAIN_PORTS[server || 0]}/${id}`;
 		page(req, res, (UNIFIED_GAME || Const.MAIN_PORTS[server]) ? "kkutu" : "portal", {
 			'_page': "kkutu",
 			'_id': id,
