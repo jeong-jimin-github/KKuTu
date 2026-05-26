@@ -1362,16 +1362,19 @@ function getFreeChannel(){
 	var i, list = {};
 	
 	if(isMaster()){
-		var mk = 1;
+		var mk;
 		
 		for(i in CHAN){
 			// if(CHAN[i].isDead()) continue;
 			list[i] = 0;
+			if(mk === undefined) mk = i;
 		}
+		if(mk === undefined) return 0;
 		for(i in ROOM){
 			// if(!list.hasOwnProperty(i)) continue;
-			mk = ROOM[i].channel;
-			list[mk]++;
+			if(list.hasOwnProperty(ROOM[i].channel)){
+				list[ROOM[i].channel]++;
+			}
 		}
 		for(i in list){
 			if(list[i] < list[mk]) mk = i;
