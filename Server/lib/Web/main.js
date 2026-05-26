@@ -23,6 +23,7 @@
 
 var WS		 = require("ws");
 var http	 = require("http");
+var https	 = require("https");
 var Express	 = require("express");
 var Exession = require("express-session");
 var Parser	 = require("body-parser");
@@ -104,12 +105,19 @@ DB.ready = function(){
 	}, 4000);
 	// Render free tier: ping self every 14 min to prevent spin-down
 	if(process.env.RENDER && process.env.RENDER_EXTERNAL_URL) {
-		setInterval(function(){
-			http.get(process.env.RENDER_EXTERNAL_URL + '/health', function(res){
-				res.resume();
-			}).on('error', function(){});
-		}, 14 * 60 * 1000);
-		JLog.info("Render keep-alive enabled.");
+		try {
+			var renderHealthUrl = new URL("/health", process.env.RENDER_EXTERNAL_URL);
+			var renderHealthClient = renderHealthUrl.protocol == "https:" ? https : http;
+			
+			setInterval(function(){
+				renderHealthClient.get(renderHealthUrl, function(res){
+					res.resume();
+				}).on('error', function(){});
+			}, 14 * 60 * 1000);
+			JLog.info("Render keep-alive enabled.");
+		} catch (err) {
+			JLog.warn("Render keep-alive disabled: " + err.message);
+		}
 	}
 
 	JLog.success("DB is ready.");
@@ -144,7 +152,6 @@ DB.ready = function(){
 		});
 		if(Const.IS_SECURED && !UNIFIED_GAME){
 			var Secure = require('../sub/secure');
-			var https = require('https');
 			var options = Secure();
 			https.createServer(options, Server).listen(443);
 		}
