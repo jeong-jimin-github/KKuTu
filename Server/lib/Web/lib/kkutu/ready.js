@@ -22,7 +22,7 @@ $(document).ready(function(){
 	$data.PUBLIC = $("#PUBLIC").html() == "true";
 	$data.URL = $("#URL").html();
 	$data.version = $("#version").html();
-	$data.server = location.href.match(/\?.*server=(\d+)/)[1];
+	$data.server = (location.href.match(/\?.*server=(\d+)/) || [ null, "0" ])[1];
 	$data.shop = {};
 	$data._okg = 0;
 	$data._playTime = 0;
