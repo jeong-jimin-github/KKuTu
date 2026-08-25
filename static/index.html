@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171a24">
+  <meta name="description" content="서버 없이 브라우저에서 바로 즐기는 정적 KKuTu 싱글플레이">
+  <title>KKuTu Static</title>
+  <link rel="icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="KKuTu Static 홈">
+        <span class="brand-mark">ㅋ</span>
+        <span>
+          <strong>KKuTu</strong>
+          <small>STATIC EDITION</small>
+        </span>
+      </a>
+      <div class="top-actions">
+        <button id="soundBtn" class="icon-btn" type="button" aria-label="효과음 켜기/끄기">🔊</button>
+        <button id="resetBtn" class="ghost-btn" type="button">기록 초기화</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="homeView" class="view active" aria-labelledby="homeTitle">
+        <div class="hero panel">
+          <div class="hero-copy">
+            <span class="eyebrow">NO SERVER · NO LOGIN · JUST PLAY</span>
+            <h1 id="homeTitle">서버 없이 바로 하는<br><em>끄투 싱글플레이</em></h1>
+            <p>Render, Node.js, WebSocket, 데이터베이스 없이 GitHub Pages 하나로 실행됩니다. 기록과 설정은 이 브라우저에만 저장됩니다.</p>
+          </div>
+          <div class="hero-stat-grid" aria-label="플레이 기록">
+            <div class="stat-card"><span>최고 점수</span><strong id="bestScore">0</strong></div>
+            <div class="stat-card"><span>최고 연승</span><strong id="bestStreak">0</strong></div>
+            <div class="stat-card"><span>총 플레이</span><strong id="totalGames">0</strong></div>
+            <div class="stat-card"><span>사용 단어</span><strong id="totalWords">0</strong></div>
+          </div>
+        </div>
+
+        <section class="setup-grid">
+          <div class="panel setup-panel">
+            <div class="section-heading">
+              <div><span class="eyebrow">GAME MODE</span><h2>게임 선택</h2></div>
+              <span class="section-note">완전 클라이언트 실행</span>
+            </div>
+            <div id="modeCards" class="mode-grid">
+              <button class="mode-card selected" type="button" data-mode="classic">
+                <span class="mode-icon">끝</span><strong>한국어 끝말잇기</strong><small>마지막 글자로 이어가기</small>
+              </button>
+              <button class="mode-card" type="button" data-mode="three">
+                <span class="mode-icon">3</span><strong>쿵쿵따</strong><small>3글자 단어만 사용</small>
+              </button>
+              <button class="mode-card" type="button" data-mode="reverse">
+                <span class="mode-icon">↺</span><strong>앞말잇기</strong><small>첫 글자로 거꾸로 이어가기</small>
+              </button>
+              <button class="mode-card" type="button" data-mode="typing">
+                <span class="mode-icon">⌨</span><strong>타자 대결</strong><small>제시어를 빠르게 입력</small>
+              </button>
+            </div>
+          </div>
+
+          <aside class="panel config-panel">
+            <div class="section-heading"><div><span class="eyebrow">PLAYER</span><h2>게임 설정</h2></div></div>
+            <label class="field"><span>닉네임</span><input id="nickname" maxlength="14" autocomplete="nickname" value="플레이어"></label>
+            <label class="field"><span>로봇 난이도</span>
+              <select id="difficulty">
+                <option value="easy">쉬움 · 느린 로봇</option>
+                <option value="normal" selected>보통 · 표준 로봇</option>
+                <option value="hard">어려움 · 빠른 로봇</option>
+              </select>
+            </label>
+            <label class="field"><span>턴 제한시간</span>
+              <select id="turnTime">
+                <option value="15">15초</option>
+                <option value="20" selected>20초</option>
+                <option value="30">30초</option>
+              </select>
+            </label>
+            <button id="startBtn" class="primary-btn" type="button">게임 시작 <span>→</span></button>
+            <p class="privacy-note">개인정보·계정·서버 전송 없음 · localStorage만 사용</p>
+          </aside>
+        </section>
+
+        <section class="panel how-panel">
+          <div class="section-heading"><div><span class="eyebrow">STATIC EDITION</span><h2>무엇이 달라졌나요?</h2></div></div>
+          <div class="feature-row">
+            <article><b>01</b><strong>서버 제거</strong><p>Render, Express, 인증, DB, WebSocket에 의존하지 않습니다.</p></article>
+            <article><b>02</b><strong>로컬 로봇</strong><p>로봇의 단어 선택과 난이도 계산을 브라우저에서 처리합니다.</p></article>
+            <article><b>03</b><strong>로컬 기록</strong><p>최고 점수, 연승, 설정을 현재 브라우저에 저장합니다.</p></article>
+          </div>
+        </section>
+      </section>
+
+      <section id="gameView" class="view" aria-labelledby="gameModeTitle">
+        <div class="game-topline">
+          <button id="exitBtn" class="ghost-btn" type="button">← 나가기</button>
+          <div class="game-title"><span id="gameModeLabel" class="eyebrow">CLASSIC</span><h1 id="gameModeTitle">한국어 끝말잇기</h1></div>
+          <button id="restartBtn" class="ghost-btn" type="button">다시 시작</button>
+        </div>
+
+        <div class="game-layout">
+          <section class="panel arena">
+            <div class="scorebar">
+              <div><span>점수</span><strong id="scoreValue">0</strong></div>
+              <div><span>연속</span><strong id="streakValue">0</strong></div>
+              <div><span>라운드</span><strong id="roundValue">1</strong></div>
+            </div>
+
+            <div class="turn-stage">
+              <div id="turnOwner" class="turn-owner">내 차례</div>
+              <div id="requiredWrap" class="required-wrap">
+                <span>이어야 할 글자</span>
+                <strong id="requiredChar">시작</strong>
+              </div>
+              <div id="typingPrompt" class="typing-prompt hidden"></div>
+              <div class="timer-track"><div id="timerBar" class="timer-bar"></div></div>
+              <div id="timerText" class="timer-text">20.0초</div>
+            </div>
+
+            <form id="wordForm" class="word-form" autocomplete="off">
+              <input id="wordInput" type="text" maxlength="20" placeholder="단어를 입력하세요" aria-label="단어 입력">
+              <button class="primary-btn submit-btn" type="submit">입력</button>
+            </form>
+            <div id="feedback" class="feedback" aria-live="polite">단어를 입력하면 게임이 시작됩니다.</div>
+          </section>
+
+          <aside class="panel history-panel">
+            <div class="section-heading compact"><div><span class="eyebrow">WORD LOG</span><h2>사용 단어</h2></div><span id="wordCount" class="count-pill">0</span></div>
+            <ol id="wordHistory" class="word-history"></ol>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>KKuTu Static Edition</span>
+      <span>GitHub Pages · client-side only</span>
+    </footer>
+  </div>
+
+  <div id="resultModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="modal panel">
+      <span id="resultBadge" class="result-badge">GAME OVER</span>
+      <h2 id="resultTitle">게임 종료</h2>
+      <p id="resultReason">제한시간을 초과했습니다.</p>
+      <div class="result-stats">
+        <div><span>최종 점수</span><strong id="resultScore">0</strong></div>
+        <div><span>최고 연속</span><strong id="resultStreak">0</strong></div>
+        <div><span>사용 단어</span><strong id="resultWords">0</strong></div>
+      </div>
+      <div class="modal-actions">
+        <button id="resultHomeBtn" class="ghost-btn" type="button">메인으로</button>
+        <button id="resultRetryBtn" class="primary-btn" type="button">한 판 더</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

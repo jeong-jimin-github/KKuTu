@@ -1,152 +1,65 @@
-# KKuTu
+# KKuTu Static Edition
 
-글자로 놀자! **끄투 온라인( KK uTu Online )** 서버 저장소입니다.  
-This is the source repository for **KKuTu Online** server.
+끄투를 **서버 없이 GitHub Pages에서 바로 실행되는 정적 싱글플레이 게임**으로 전환한 버전입니다.
 
-- Original creator: [JJoriping](http://blog.jjo.kr/)
-- Wiki: https://github.com/jeong-jimin-github/KKuTu/wiki
-- Languages: [한국어](#한국어) · [English](#english)
+기존 Render/Node.js/Express/WebSocket/SQLite 런타임은 더 이상 배포 경로에 포함되지 않습니다. `main` 브랜치에 push하면 GitHub Actions가 `static/` 디렉터리를 Pages artifact로 만들어 배포합니다.
 
----
+## 현재 구조
 
-## 스크린샷 / Screenshots
+```text
+static/
+  index.html   # 정적 UI
+  style.css    # 반응형 게임 UI
+  app.js       # 게임 규칙, 로봇, 타이머, localStorage
+.github/workflows/pages.yml
+Server/        # 기존 KKuTu 서버 소스/리소스 (참고용, Pages 실행에는 사용하지 않음)
+```
 
-| Lobby | Room | Team |
-|---|---|---|
-| ![KKuTu Lobby](Server/lib/Web/public/img/kkutu/help/lobby.png) | ![KKuTu Room](Server/lib/Web/public/img/kkutu/help/room.png) | ![KKuTu Team](Server/lib/Web/public/img/kkutu/help/team.png) |
+## 정적판 기능
 
-| Game | Mission | Replay |
-|---|---|---|
-| ![KKuTu Game](Server/lib/Web/public/img/kkutu/help/game.png) | ![KKuTu Mission](Server/lib/Web/public/img/kkutu/help/mission.png) | ![KKuTu Replay](Server/lib/Web/public/img/kkutu/help/replay.png) |
+- 한국어 끝말잇기
+- 3글자 전용 쿵쿵따
+- 앞말잇기
+- 타자 대결
+- 쉬움 / 보통 / 어려움 로컬 로봇
+- 턴 제한시간 15 / 20 / 30초
+- 점수, 연속 성공, 플레이 횟수 기록
+- 닉네임/난이도/시간 설정 저장
+- 브라우저 `localStorage` 기반 기록 저장
+- 모바일/데스크톱 반응형 UI
+- 외부 API, 계정, DB, WebSocket 없음
 
----
+> 정적 호스팅 특성상 서버 권한이 필요한 실시간 온라인 멀티플레이, OAuth 로그인, 공용 랭킹/계정 데이터는 제공하지 않습니다.
 
-## 한국어
+## GitHub Pages 배포
 
-### 소개
+배포는 `.github/workflows/pages.yml`만 사용합니다.
 
-**끄투**는 어휘력 기반의 멀티플레이 단어 게임입니다.  
-이 저장소는 서버를 직접 설치/운영하려는 사용자를 위한 소스 코드와 리소스를 제공합니다.
+1. `main` 브랜치에 push
+2. Actions가 `static/`을 `_site`로 복사
+3. 기존 저장소의 favicon이 있으면 정적 사이트에 포함
+4. `actions/upload-pages-artifact`로 업로드
+5. `actions/deploy-pages`로 GitHub Pages 배포
 
-### 요구 사항
+워크플로는 Pages enablement도 시도하도록 설정되어 있습니다. 저장소/계정 정책 때문에 자동 활성화가 허용되지 않는 경우 GitHub 저장소 **Settings → Pages → Source → GitHub Actions**를 한 번 선택하면 됩니다.
 
-- Node.js (권장: 18 이상)
-- npm
-- SQLite (파일 기반 DB, 외부 PostgreSQL/Redis 불필요)
+## 로컬 실행
 
-### 빠른 시작 (Windows)
+빌드 단계가 없습니다. `static/`을 아무 정적 HTTP 서버로 열면 됩니다.
 
-1. 저장소를 클론/다운로드합니다.
-2. `npm install -g grunt grunt-cli` 를 실행합니다.
-3. 루트에서 `server-setup.bat` 를 실행합니다.
-4. `Server/lib/sub/auth.json`, `Server/lib/sub/global.json` 파일을 생성/수정합니다.
-5. `Server/run.bat` 를 실행합니다.
+예:
 
-### 빠른 시작 (Linux/macOS)
+```bash
+python -m http.server 8080 -d static
+```
 
-1. 저장소를 클론합니다.
-2. `npm install -g grunt grunt-cli` 를 실행합니다.
-3. `cd Server && node setup`
-4. `cd Server/lib && npx grunt default pack`
-5. `Server/lib/sub/auth.json`, `Server/lib/sub/global.json` 파일을 생성/수정합니다.
-6. 서버 실행:
-   - 게임 서버: `node Server/lib/Game/cluster.js 0 1`
-   - 웹 서버: `node Server/lib/Web/cluster.js 1`
+그 후 `http://localhost:8080`으로 접속합니다.
 
-### 필수 설정 (`Server/lib/sub/global.json`)
+## 기존 서버 코드
 
-아래 항목을 반드시 맞춰 주세요.
+`Server/`는 원본 KKuTu 코드와 리소스를 보존하기 위한 참고 영역입니다. GitHub Pages 워크플로는 이 서버를 실행하거나 Node 패키지를 설치하지 않습니다. 정적판의 런타임 코드는 `static/`만 보면 됩니다.
 
-- `SQLITE_PATH`: SQLite DB 파일 경로 (예: `/kkutu/kkutu.db`)
-- `MAIN_PORTS`, `GAME_SERVER_HOST`, `ADMIN` 등 서버 운영 기본값
-- HTTPS 사용 시 `IS_SECURED`, `SSL_OPTIONS`
-
-> 참고: 기존 PostgreSQL/Redis 기반 설정 없이 동작하도록 구성되어 있습니다.
-
-### 데이터/도구
-
-- 일본어 사전 반영:
-  - `node tools/import_jmdict.js <JMdict_e.gz 경로> <sqlite 스키마 파일 경로>`
-- 일본어 테이블 반영 스크립트:
-  - `node tools/apply_japanese_db.js` (환경 설정 필요)
-- 애니메이션 어인정 단어 보강:
-  - `python3 tools/import_anime_db.py`
-- 단어 테마 GUI:
-  - `python3 tools/word_theme_gui.py`
-
-### Docker Compose
-
-`docker-compose.yml`은 SQLite 볼륨(`kkutu_data`)을 사용하도록 구성되어 있습니다.
-
-- `web`, `game` 서비스에 `SQLITE_PATH=/kkutu/kkutu.db` 적용
-- 별도 PostgreSQL 컨테이너 없이 실행
-
-### 라이선스
+## 라이선스
 
 - 소스 코드: [GNU GPL-3.0](LICENSE)
-- 이미지/사운드: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-
----
-
-## English
-
-### Overview
-
-**KKuTu** is a multiplayer word game platform.  
-This repository contains server code and assets for self-hosting.
-
-### Requirements
-
-- Node.js (recommended: 18+)
-- npm
-- SQLite (file-based DB, no external PostgreSQL/Redis required)
-
-### Quick Start (Windows)
-
-1. Clone/download this repository.
-2. Run `npm install -g grunt grunt-cli`.
-3. Run `server-setup.bat` in the repository root.
-4. Create/update `Server/lib/sub/auth.json` and `Server/lib/sub/global.json`.
-5. Run `Server/run.bat`.
-
-### Quick Start (Linux/macOS)
-
-1. Clone this repository.
-2. Run `npm install -g grunt grunt-cli`.
-3. `cd Server && node setup`
-4. `cd Server/lib && npx grunt default pack`
-5. Create/update `Server/lib/sub/auth.json` and `Server/lib/sub/global.json`.
-6. Start servers:
-   - Game: `node Server/lib/Game/cluster.js 0 1`
-   - Web: `node Server/lib/Web/cluster.js 1`
-
-### Required Config (`Server/lib/sub/global.json`)
-
-Please set at least:
-
-- `SQLITE_PATH`: SQLite DB file path (e.g. `/kkutu/kkutu.db`)
-- server basics such as `MAIN_PORTS`, `GAME_SERVER_HOST`, `ADMIN`
-- HTTPS options (`IS_SECURED`, `SSL_OPTIONS`) if needed
-
-### Data Utilities
-
-- Import/update Japanese dictionary:
-  - `node tools/import_jmdict.js <path-to-JMdict_e.gz> <path-to-sqlite-schema-file>`
-- Apply Japanese DB section:
-  - `node tools/apply_japanese_db.js` (requires proper environment config)
-- Import anime-themed injeong corpus:
-  - `python3 tools/import_anime_db.py`
-- Word theme GUI:
-  - `python3 tools/word_theme_gui.py`
-
-### Docker Compose
-
-The included `docker-compose.yml` uses SQLite volume storage (`kkutu_data`):
-
-- `web` and `game` services use `SQLITE_PATH=/kkutu/kkutu.db`
-- no separate PostgreSQL container is required
-
-### License
-
-- Source code: [GNU GPL-3.0](LICENSE)
-- Images and sounds: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+- 원본 KKuTu 이미지/사운드 리소스: 기존 저장소 라이선스 고지에 따름
