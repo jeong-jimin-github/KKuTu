@@ -2,163 +2,100 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#171a24">
-  <meta name="description" content="서버 없이 브라우저에서 바로 즐기는 정적 KKuTu 싱글플레이">
-  <title>KKuTu Static</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <meta name="theme-color" content="#7CC4F8">
+  <meta name="description" content="원본 KKuTu UI와 리소스를 사용하는 GitHub Pages 정적 로컬 플레이 버전">
+  <title>KKuTu - 글자로 놀자!</title>
   <link rel="icon" href="./favicon.ico">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/fa.css">
+  <link rel="stylesheet" href="./css/expl.css">
+  <link rel="stylesheet" href="./css/in_game_kkutu.css">
+  <link rel="stylesheet" href="./css/in_game_kkutu_shop.css">
+  <link rel="stylesheet" href="./static.css">
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <a class="brand" href="#" aria-label="KKuTu Static 홈">
-        <span class="brand-mark">ㅋ</span>
-        <span>
-          <strong>KKuTu</strong>
-          <small>STATIC EDITION</small>
-        </span>
-      </a>
-      <div class="top-actions">
-        <button id="soundBtn" class="icon-btn" type="button" aria-label="효과음 켜기/끄기">🔊</button>
-        <button id="resetBtn" class="ghost-btn" type="button">기록 초기화</button>
-      </div>
-    </header>
-
-    <main>
-      <section id="homeView" class="view active" aria-labelledby="homeTitle">
-        <div class="hero panel">
-          <div class="hero-copy">
-            <span class="eyebrow">NO SERVER · NO LOGIN · JUST PLAY</span>
-            <h1 id="homeTitle">서버 없이 바로 하는<br><em>끄투 싱글플레이</em></h1>
-            <p>Render, Node.js, WebSocket, 데이터베이스 없이 GitHub Pages 하나로 실행됩니다. 기록과 설정은 이 브라우저에만 저장됩니다.</p>
-          </div>
-          <div class="hero-stat-grid" aria-label="플레이 기록">
-            <div class="stat-card"><span>최고 점수</span><strong id="bestScore">0</strong></div>
-            <div class="stat-card"><span>최고 연승</span><strong id="bestStreak">0</strong></div>
-            <div class="stat-card"><span>총 플레이</span><strong id="totalGames">0</strong></div>
-            <div class="stat-card"><span>사용 단어</span><strong id="totalWords">0</strong></div>
-          </div>
-        </div>
-
-        <section class="setup-grid">
-          <div class="panel setup-panel">
-            <div class="section-heading">
-              <div><span class="eyebrow">GAME MODE</span><h2>게임 선택</h2></div>
-              <span class="section-note">완전 클라이언트 실행</span>
-            </div>
-            <div id="modeCards" class="mode-grid">
-              <button class="mode-card selected" type="button" data-mode="classic">
-                <span class="mode-icon">끝</span><strong>한국어 끝말잇기</strong><small>마지막 글자로 이어가기</small>
-              </button>
-              <button class="mode-card" type="button" data-mode="three">
-                <span class="mode-icon">3</span><strong>쿵쿵따</strong><small>3글자 단어만 사용</small>
-              </button>
-              <button class="mode-card" type="button" data-mode="reverse">
-                <span class="mode-icon">↺</span><strong>앞말잇기</strong><small>첫 글자로 거꾸로 이어가기</small>
-              </button>
-              <button class="mode-card" type="button" data-mode="typing">
-                <span class="mode-icon">⌨</span><strong>타자 대결</strong><small>제시어를 빠르게 입력</small>
-              </button>
-            </div>
-          </div>
-
-          <aside class="panel config-panel">
-            <div class="section-heading"><div><span class="eyebrow">PLAYER</span><h2>게임 설정</h2></div></div>
-            <label class="field"><span>닉네임</span><input id="nickname" maxlength="14" autocomplete="nickname" value="플레이어"></label>
-            <label class="field"><span>로봇 난이도</span>
-              <select id="difficulty">
-                <option value="easy">쉬움 · 느린 로봇</option>
-                <option value="normal" selected>보통 · 표준 로봇</option>
-                <option value="hard">어려움 · 빠른 로봇</option>
-              </select>
-            </label>
-            <label class="field"><span>턴 제한시간</span>
-              <select id="turnTime">
-                <option value="15">15초</option>
-                <option value="20" selected>20초</option>
-                <option value="30">30초</option>
-              </select>
-            </label>
-            <button id="startBtn" class="primary-btn" type="button">게임 시작 <span>→</span></button>
-            <p class="privacy-note">개인정보·계정·서버 전송 없음 · localStorage만 사용</p>
-          </aside>
-        </section>
-
-        <section class="panel how-panel">
-          <div class="section-heading"><div><span class="eyebrow">STATIC EDITION</span><h2>무엇이 달라졌나요?</h2></div></div>
-          <div class="feature-row">
-            <article><b>01</b><strong>서버 제거</strong><p>Render, Express, 인증, DB, WebSocket에 의존하지 않습니다.</p></article>
-            <article><b>02</b><strong>로컬 로봇</strong><p>로봇의 단어 선택과 난이도 계산을 브라우저에서 처리합니다.</p></article>
-            <article><b>03</b><strong>로컬 기록</strong><p>최고 점수, 연승, 설정을 현재 브라우저에 저장합니다.</p></article>
-          </div>
-        </section>
-      </section>
-
-      <section id="gameView" class="view" aria-labelledby="gameModeTitle">
-        <div class="game-topline">
-          <button id="exitBtn" class="ghost-btn" type="button">← 나가기</button>
-          <div class="game-title"><span id="gameModeLabel" class="eyebrow">CLASSIC</span><h1 id="gameModeTitle">한국어 끝말잇기</h1></div>
-          <button id="restartBtn" class="ghost-btn" type="button">다시 시작</button>
-        </div>
-
-        <div class="game-layout">
-          <section class="panel arena">
-            <div class="scorebar">
-              <div><span>점수</span><strong id="scoreValue">0</strong></div>
-              <div><span>연속</span><strong id="streakValue">0</strong></div>
-              <div><span>라운드</span><strong id="roundValue">1</strong></div>
-            </div>
-
-            <div class="turn-stage">
-              <div id="turnOwner" class="turn-owner">내 차례</div>
-              <div id="requiredWrap" class="required-wrap">
-                <span>이어야 할 글자</span>
-                <strong id="requiredChar">시작</strong>
-              </div>
-              <div id="typingPrompt" class="typing-prompt hidden"></div>
-              <div class="timer-track"><div id="timerBar" class="timer-bar"></div></div>
-              <div id="timerText" class="timer-text">20.0초</div>
-            </div>
-
-            <form id="wordForm" class="word-form" autocomplete="off">
-              <input id="wordInput" type="text" maxlength="20" placeholder="단어를 입력하세요" aria-label="단어 입력">
-              <button class="primary-btn submit-btn" type="submit">입력</button>
-            </form>
-            <div id="feedback" class="feedback" aria-live="polite">단어를 입력하면 게임이 시작됩니다.</div>
-          </section>
-
-          <aside class="panel history-panel">
-            <div class="section-heading compact"><div><span class="eyebrow">WORD LOG</span><h2>사용 단어</h2></div><span id="wordCount" class="count-pill">0</span></div>
-            <ol id="wordHistory" class="word-history"></ol>
-          </aside>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <span>KKuTu Static Edition</span>
-      <span>GitHub Pages · client-side only</span>
-    </footer>
+  <div id="Top">
+    <div class="Menu"><div id="account"><div id="account-info">LOCAL PLAYER</div></div></div>
+    <div id="global-notice"><div id="gn-content">GitHub Pages 로컬 플레이 모드 · 원본 KKuTu UI / 이미지 / 사운드 리소스 사용</div></div>
   </div>
 
-  <div id="resultModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
-    <div class="modal panel">
-      <span id="resultBadge" class="result-badge">GAME OVER</span>
-      <h2 id="resultTitle">게임 종료</h2>
-      <p id="resultReason">제한시간을 초과했습니다.</p>
-      <div class="result-stats">
-        <div><span>최종 점수</span><strong id="resultScore">0</strong></div>
-        <div><span>최고 연속</span><strong id="resultStreak">0</strong></div>
-        <div><span>사용 단어</span><strong id="resultWords">0</strong></div>
-      </div>
-      <div class="modal-actions">
-        <button id="resultHomeBtn" class="ghost-btn" type="button">메인으로</button>
-        <button id="resultRetryBtn" class="primary-btn" type="button">한 판 더</button>
-      </div>
+  <div id="Jungle">
+    <img id="Background" src="./img/bg/def.png" alt="">
+    <div id="Yell"></div><div id="Loading">불러오는 중...</div><div id="Balloons"></div>
+  </div>
+
+  <main id="Middle">
+    <div id="Intro">
+      <img id="intro" src="./img/kkutu/intro.png" alt="KKuTu">
+      <div id="version">STATIC / LOCAL</div><div id="intro-text">글자로 놀자!</div>
     </div>
-  </div>
 
-  <script src="./app.js" defer></script>
+    <div class="kkutu-menu">
+      <button id="HelpBtn" class="tiny-menu for-lobby for-master for-gaming" style="background-color:#BBBBBB" title="도움말"><i class="fa fa-question"></i></button>
+      <button id="SettingBtn" class="tiny-menu for-lobby for-master for-gaming" style="background-color:#CCCCCC" title="설정"><i class="fa fa-cog"></i></button>
+      <button id="NewRoomBtn" class="for-lobby" style="background-color:#8EC0F3">방 만들기</button>
+      <button id="QuickRoomBtn" class="for-lobby" style="background-color:#B0D2F3">빠른 입장</button>
+      <button id="DictionaryBtn" class="for-lobby for-master for-gaming" style="background-color:#73D07A">사전</button>
+      <button id="SetRoomBtn" class="for-master" style="background-color:#B0D2F3">방 설정</button>
+      <button id="PracticeBtn" class="for-master" style="background-color:#FCF5A9">로봇 설정</button>
+      <button id="StartBtn" class="for-master" style="background-color:#FFB576">시작</button>
+      <button id="ExitBtn" class="for-master for-gaming" style="background-color:#FFADAD">나가기</button>
+    </div>
+
+    <section id="LobbyView" class="static-view">
+      <div class="UserListBox Product"><h5 class="product-title"><i class="fa fa-users"></i>접속자 [2명]</h5><div class="product-body" id="UserList"></div></div>
+      <div class="RoomListBox Product"><h5 class="product-title"><i class="fa fa-bars"></i>방 목록 [4개]</h5><div class="product-body" id="RoomList"></div></div>
+      <div class="MeBox Product" id="MeBox">
+        <h5 class="product-title">내 정보</h5><div class="product-body">
+          <div class="moremi my-image" id="my-moremi"><img class="moremies moremi-body" src="./img/kkutu/moremi/body.png" alt=""></div>
+          <div class="my-stat"><div class="my-stat-level level-sprite"></div><div class="my-stat-name ellipse" id="my-name">플레이어</div><div class="my-stat-record" id="my-record">최고 0점</div><div class="my-stat-ping">LOCAL</div><div><div class="graph my-okg"><div class="graph-bar" style="width:100%"></div></div><div class="bar-text my-okg-text">OFFLINE</div></div></div>
+          <div class="my-level" id="my-level">LEVEL 1</div><div class="graph my-gauge"><div class="graph-bar" id="my-gauge-bar" style="width:0%"></div></div><div class="bar-text my-gauge-text" id="my-gauge-text">0 / 1,000</div>
+        </div>
+      </div>
+      <div class="ChatBox Product lobby-chat"><h5 class="product-title">채팅</h5><div class="product-body"><div id="Chat"></div><input id="Talk" maxlength="200" autocomplete="off"><button id="ChatBtn">전송</button></div></div>
+    </section>
+
+    <section id="RoomView" class="static-view static-hidden">
+      <div class="RoomBox Product"><h5 class="product-title" id="RoomTitleBar"></h5><div class="product-body"><div class="team-selector team-unable"><div class="team-button team-0 team-chosen">개인</div><div class="team-button team-1">A</div><div class="team-button team-2">B</div><div class="team-button team-3">C</div><div class="team-button team-4">D</div></div><div class="room-users" id="RoomUsers"></div></div></div>
+      <div class="ChatBox Product room-chat"><h5 class="product-title">채팅</h5><div class="product-body"><div id="RoomChat"></div><input id="RoomTalk" maxlength="200" autocomplete="off"><button id="RoomChatBtn">전송</button></div></div>
+    </section>
+
+    <section id="GameView" class="static-view static-hidden">
+      <div class="GameBox Product">
+        <h5 class="product-title" id="GameTitleBar"></h5><div class="product-body">
+          <div class="game-head">
+            <div class="items" id="MissionItem"></div><div class="hints" style="display:none"></div>
+            <div class="jjoriping"><img class="jjoObj jjoEyeL" src="./img/jjoeyeL.png" alt=""><img class="jjoObj jjoNose" src="./img/jjonose.png" alt=""><img class="jjoObj jjoEyeR" src="./img/jjoeyeR.png" alt=""><div class="jjoDisplayBar"><div class="jjo-display ellipse" id="GameDisplay">곧 시작합니다...</div><div class="graph jjo-turn-time"><div class="graph-bar" id="TurnBar"></div></div><div class="graph jjo-round-time"><div class="graph-bar" id="RoundBar"></div></div></div></div>
+            <div class="chain" id="Chain">0</div><div class="rounds" id="Rounds"></div><div class="history-holder"><div class="history" id="History"></div></div>
+          </div>
+          <div class="game-body" id="GameUsers"></div><div class="game-input" id="GameInputWrap"><input id="game-input" placeholder="당신의 차례입니다. 단어를 입력하세요." autocomplete="off"></div>
+        </div>
+      </div>
+      <div class="ChatBox Product game-chat"><h5 class="product-title">채팅 / 게임 입력</h5><div class="product-body"><div id="GameChat"></div><input id="GameTalk" maxlength="200" autocomplete="off"><button id="GameChatBtn">전송</button></div></div>
+    </section>
+
+    <div class="dialog" id="RoomDiag" style="width:300px;height:340px"><div class="dialog-head"><div class="dialog-title">방 만들기</div><div class="closeBtn" data-close="RoomDiag"></div></div><div class="dialog-body">
+      <div class="dialog-bar"><h4>방 제목</h4><input id="room-title" maxlength="20" value="로컬 연습방"></div>
+      <div class="dialog-bar"><h4>게임 유형</h4><select id="room-mode"><option value="classic">한국어 끝말잇기</option><option value="three">쿵쿵따</option><option value="reverse">앞말잇기</option><option value="typing">타자 대결</option></select></div>
+      <div class="dialog-bar"><h4>라운드</h4><input id="room-round" type="number" min="1" max="10" value="5"></div>
+      <div class="dialog-bar"><h4>라운드 시간</h4><select id="room-time"><option value="30">30초</option><option value="60" selected>60초</option><option value="90">90초</option><option value="120">120초</option></select></div>
+      <div class="dialog-bar"><h4>턴 시간</h4><select id="turn-time"><option value="10">10초</option><option value="15" selected>15초</option><option value="20">20초</option><option value="30">30초</option></select></div>
+      <div class="dialog-bar tail-button"><button id="room-ok">확인</button></div>
+    </div></div>
+
+    <div class="dialog" id="PracticeDiag" style="width:300px;height:135px"><div class="dialog-head"><div class="dialog-title">로봇 설정</div><div class="closeBtn" data-close="PracticeDiag"></div></div><div class="dialog-body"><div class="dialog-bar"><h4>난이도</h4><select id="practice-level"><option value="0">초보 로봇</option><option value="1">쉬운 로봇</option><option value="2" selected>보통 로봇</option><option value="3">어려운 로봇</option><option value="4">매우 어려운 로봇</option></select></div><div class="dialog-bar tail-button"><button id="practice-ok">확인</button></div></div></div>
+
+    <div class="dialog" id="SettingDiag" style="width:300px;height:235px"><div class="dialog-head"><div class="dialog-title">설정</div><div class="closeBtn" data-close="SettingDiag"></div></div><div class="dialog-body"><div class="dialog-bar"><h4>닉네임</h4><input id="nickname" maxlength="14" value="플레이어"></div><div class="dialog-bar"><h4>소리</h4><div class="dialog-opt"><input id="mute-bgm" type="checkbox" style="width:auto"><label for="mute-bgm"> 배경음악 끄기</label></div><div class="dialog-opt"><input id="mute-effect" type="checkbox" style="width:auto"><label for="mute-effect"> 효과음 끄기</label></div></div><div class="dialog-bar"><h4>기록</h4><button id="reset-record">로컬 기록 초기화</button></div><div class="dialog-bar tail-button"><button id="setting-ok">저장</button></div></div></div>
+
+    <div class="dialog" id="DictionaryDiag" style="width:400px;height:300px"><div class="dialog-head"><div class="dialog-title">사전</div><div class="closeBtn" data-close="DictionaryDiag"></div></div><div class="dialog-body"><div class="dialog-bar"><h4>단어</h4><input id="dict-input" style="width:283px" maxlength="30"></div><div class="dialog-bar" id="dict-output" style="height:195px;overflow-y:auto;color:#BBBBBB;background-color:#111111;padding:5px;box-sizing:border-box"></div><div class="dialog-bar tail-button"><button id="dict-search">검색</button></div></div></div>
+
+    <div class="dialog" id="HelpDiag" style="width:550px;height:330px"><div class="dialog-head"><div class="dialog-title">도움말</div><div class="closeBtn" data-close="HelpDiag"></div></div><div class="dialog-body static-help"><h3>KKuTu Static / Local</h3><p>원본 KKuTu의 화면 구조, CSS, 이미지, 캐릭터 리소스와 효과음을 그대로 사용하면서 서버 통신만 브라우저 로컬 처리로 바꾼 버전입니다.</p><p><b>끝말잇기</b>: 제시 글자로 시작하는 단어를 입력합니다. <b>쿵쿵따</b>: 3글자 단어만 사용할 수 있습니다. <b>앞말잇기</b>: 제시 글자로 끝나는 단어를 입력합니다.</p><p>로그인, 공용 DB, WebSocket 멀티플레이는 없으며 기록과 설정은 현재 브라우저의 localStorage에 저장됩니다.</p></div></div>
+
+    <div class="dialog" id="ResultDiag" style="width:400px;height:420px"><div class="dialog-head no-close"><div class="dialog-title">게임 결과</div></div><div class="dialog-body"><div class="result-board" id="ResultBoard"></div><div class="result-me"><div class="result-me-score" id="ResultScoreGain">이번 게임 +0</div><div class="result-me-money">LOCAL MODE</div><div class="result-me-level"><div class="result-me-level-head">LEVEL</div><div class="result-me-level-body" id="ResultLevel">1</div></div><div class="graph result-me-gauge"><div class="graph-bar result-me-before-bar" id="ResultGauge"></div></div><div class="result-me-score-text" id="ResultScoreText">0 / 1,000</div></div><div class="dialog-bar tail-button"><button id="result-ok">확인</button><button id="result-save">리플레이 저장</button></div></div></div>
+  </main>
+
+  <footer id="Bottom"><div class="bottom-legal">KKuTu GPL-3.0 · Original UI/assets preserved · Static local runtime</div></footer>
+  <script src="./app.js"></script>
 </body>
 </html>
