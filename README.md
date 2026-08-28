@@ -1,5 +1,7 @@
 # KKuTu Static Edition
 
+https://jeong-jimin-github.github.io/Static-KKuTu/
+
 원본 KKuTu의 **UI, CSS, 이미지, 캐릭터/Moremi 리소스, 폰트, BGM 및 효과음 시스템을 그대로 사용하는** GitHub Pages용 정적 로컬 플레이 버전입니다.
 
 Render/Node.js/Express/WebSocket/SQLite 같은 서버 런타임만 배포 경로에서 제거했습니다. 화면을 새 디자인으로 다시 만든 것이 아니라, 원본 `Server/lib/Web/public` 리소스를 Pages 빌드에 그대로 포함하고 서버 통신 부분만 브라우저 로컬 게임 로직으로 대체합니다.
