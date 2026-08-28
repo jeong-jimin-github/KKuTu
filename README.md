@@ -28,10 +28,10 @@ Render/Node.js/Express/WebSocket/SQLite 같은 서버 런타임만 배포 경로
 
 - 로그인/OAuth 및 공용 계정
 - WebSocket 실시간 멀티플레이
-- 서버 DB/랭킹/상점 구매
-- 서버 사전 API
+- 서버 DB 쓰기/랭킹/상점 구매
+- 서버 사전 API 호출(한국어 게임 사전은 정적 데이터로 변환)
 
-대신 로컬 방, 로컬 로봇 대전, 채팅 UI, 사전 검색, 점수/기록, 설정은 브라우저에서 처리하며 `localStorage`에 저장합니다.
+대신 로컬 방, 로컬 로봇 대전, 채팅 UI, 사전 검색, 점수/기록, 설정은 브라우저에서 처리하며 `localStorage`에 저장합니다. 한국어 게임 사전은 원본 `JJoriping/KKuTu`의 `db.sql`에서 게임 대상 품사 358,998개 단어와 어인정/외래어/깐깐 판정 메타데이터를 추출해 `static/word-data.js`로 포함합니다.
 
 현재 로컬 플레이 모드:
 
@@ -39,6 +39,8 @@ Render/Node.js/Express/WebSocket/SQLite 같은 서버 런타임만 배포 경로
 - 쿵쿵따
 - 앞말잇기
 - 타자 대결
+
+방 만들기/설정에서는 원본 규칙에 맞춰 **매너, 어인정, 미션, 우리말, 깐깐, 3232, 속담** 옵션을 게임 모드별로 선택할 수 있습니다.
 
 ## 구조
 
@@ -48,10 +50,24 @@ static/
   index.html             # 원본 DOM 구조를 정적 HTML로 옮긴 진입점
   static.css             # 정적화에 필요한 최소 보정만 포함
   app.js                 # WebSocket 대신 실행되는 로컬 게임 런타임
+  word-data.js           # 원본 db.sql에서 생성한 한국어 정적 사전
+tools/
+  build_static_words.py  # 원본 db.sql → word-data.js 변환기
 .github/workflows/pages.yml
 ```
 
 `static.css`는 새 테마/디자인 파일이 아닙니다. 원본 CSS를 우선 사용하고 정적 상태 전환 및 GitHub Pages 실행에 필요한 보정만 담당합니다.
+
+
+## 정적 단어 데이터 갱신
+
+원본 최신 `db.sql`에서 정적 사전을 다시 만들려면 저장소 루트에서 다음을 실행합니다.
+
+```bash
+python tools/build_static_words.py
+```
+
+로컬에 받은 `db.sql`을 사용하려면 `python tools/build_static_words.py --input db.sql`로 실행할 수 있습니다. 생성 결과에는 게임에 사용하는 단어 ID와 `어인정`, `외래어`, `깐깐` 판정용 최소 플래그만 포함합니다.
 
 ## GitHub Pages 배포
 

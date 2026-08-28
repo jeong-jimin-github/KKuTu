@@ -75,12 +75,21 @@
       <div class="ChatBox Product game-chat"><h5 class="product-title">채팅 / 게임 입력</h5><div class="product-body"><div id="GameChat"></div><input id="GameTalk" maxlength="200" autocomplete="off"><button id="GameChatBtn">전송</button></div></div>
     </section>
 
-    <div class="dialog" id="RoomDiag" style="width:300px;height:340px"><div class="dialog-head"><div class="dialog-title">방 만들기</div><div class="closeBtn" data-close="RoomDiag"></div></div><div class="dialog-body">
+    <div class="dialog" id="RoomDiag" style="width:300px;height:410px"><div class="dialog-head"><div class="dialog-title">방 만들기</div><div class="closeBtn" data-close="RoomDiag"></div></div><div class="dialog-body">
       <div class="dialog-bar"><h4>방 제목</h4><input id="room-title" maxlength="20" value="로컬 연습방"></div>
       <div class="dialog-bar"><h4>게임 유형</h4><select id="room-mode"><option value="classic">한국어 끝말잇기</option><option value="three">쿵쿵따</option><option value="reverse">앞말잇기</option><option value="typing">타자 대결</option></select></div>
       <div class="dialog-bar"><h4>라운드</h4><input id="room-round" type="number" min="1" max="10" value="5"></div>
       <div class="dialog-bar"><h4>라운드 시간</h4><select id="room-time"><option value="30">30초</option><option value="60" selected>60초</option><option value="90">90초</option><option value="120">120초</option></select></div>
       <div class="dialog-bar"><h4>턴 시간</h4><select id="turn-time"><option value="10">10초</option><option value="15" selected>15초</option><option value="20">20초</option><option value="30">30초</option></select></div>
+      <div class="dialog-bar static-room-option-row"><h4>특수 규칙</h4><div class="static-room-options">
+        <div class="dialog-opt" id="room-manner-panel" title="한방 단어를 사용할 수 없게 합니다."><input id="room-manner" type="checkbox"><label for="room-manner">매너</label></div>
+        <div class="dialog-opt" id="room-injeong-panel" title="특수한 단어의 사용을 인정합니다."><input id="room-injeong" type="checkbox"><label for="room-injeong">어인정</label></div>
+        <div class="dialog-opt" id="room-mission-panel" title="특정 글자를 포함한 단어에 추가 점수를 줍니다."><input id="room-mission" type="checkbox"><label for="room-mission">미션</label></div>
+        <div class="dialog-opt" id="room-loanword-panel" title="외래어를 사용할 수 없게 합니다."><input id="room-loanword" type="checkbox"><label for="room-loanword">우리말</label></div>
+        <div class="dialog-opt" id="room-strict-panel" title="방언·옛말·북한말 등을 제외한 명사 중심 규칙입니다."><input id="room-strict" type="checkbox"><label for="room-strict">깐깐</label></div>
+        <div class="dialog-opt" id="room-sami-panel" title="3글자와 2글자 단어를 번갈아 잇습니다."><input id="room-sami" type="checkbox"><label for="room-sami">3232</label></div>
+        <div class="dialog-opt" id="room-proverb-panel" title="타자 대결 문장을 속담으로 바꿉니다."><input id="room-proverb" type="checkbox"><label for="room-proverb">속담</label></div>
+      </div></div>
       <div class="dialog-bar tail-button"><button id="room-ok">확인</button></div>
     </div></div>
 
@@ -96,6 +105,7 @@
   </main>
 
   <footer id="Bottom"><div class="bottom-legal">KKuTu GPL-3.0 · Original UI/assets preserved · Static local runtime</div></footer>
+  <script src="./word-data.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
