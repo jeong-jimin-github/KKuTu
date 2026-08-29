@@ -7,10 +7,14 @@
   <meta name="description" content="원본 KKuTu UI와 리소스를 사용하는 GitHub Pages 정적 로컬 플레이 버전">
   <title>KKuTu - 글자로 놀자!</title>
   <link rel="icon" href="./favicon.ico">
-  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/style.css" media="(min-width: 641px)">
+  <link rel="stylesheet" href="./css/m_style.css" media="(max-width: 640px)">
   <link rel="stylesheet" href="./css/fa.css">
   <link rel="stylesheet" href="./css/expl.css">
-  <link rel="stylesheet" href="./css/in_game_kkutu.css">
+  <link rel="stylesheet" href="./css/in_kkutu.css" media="(min-width: 641px)">
+  <link rel="stylesheet" href="./css/in_m_kkutu.css" media="(max-width: 640px)">
+  <link rel="stylesheet" href="./css/in_game_kkutu.css" media="(min-width: 641px)">
+  <link rel="stylesheet" href="./css/in_m_game_kkutu.css" media="(max-width: 640px)">
   <link rel="stylesheet" href="./css/in_game_kkutu_shop.css">
   <link rel="stylesheet" href="./static.css">
 </head>
@@ -27,7 +31,7 @@
 
   <main id="Middle">
     <div id="Intro">
-      <img id="intro" src="./img/kkutu/intro.png" alt="KKuTu">
+      <picture><source media="(max-width: 640px)" srcset="./img/kkutu/m_intro.png"><img id="intro" src="./img/kkutu/intro.png" alt="KKuTu"></picture>
       <div id="version">STATIC / LOCAL</div><div id="intro-text">글자로 놀자!</div>
     </div>
 
@@ -45,11 +49,11 @@
 
     <section id="LobbyView" class="static-view">
       <div class="UserListBox Product"><h5 class="product-title"><i class="fa fa-users"></i>접속자 [2명]</h5><div class="product-body" id="UserList"></div></div>
-      <div class="RoomListBox Product"><h5 class="product-title"><i class="fa fa-bars"></i>방 목록 [4개]</h5><div class="product-body" id="RoomList"></div></div>
+      <div class="RoomListBox Product"><h5 class="product-title"><i class="fa fa-bars"></i>방 목록 [5개]</h5><div class="product-body" id="RoomList"></div></div>
       <div class="MeBox Product" id="MeBox">
         <h5 class="product-title">내 정보</h5><div class="product-body">
-          <div class="moremi my-image" id="my-moremi"><img class="moremies moremi-body" src="./img/kkutu/moremi/body.png" alt=""></div>
           <div class="my-stat"><div class="my-stat-level level-sprite"></div><div class="my-stat-name ellipse" id="my-name">플레이어</div><div class="my-stat-record" id="my-record">최고 0점</div><div class="my-stat-ping">LOCAL</div><div><div class="graph my-okg"><div class="graph-bar" style="width:100%"></div></div><div class="bar-text my-okg-text">OFFLINE</div></div></div>
+          <div class="moremi my-image" id="my-moremi"><img class="moremies moremi-body" src="./img/kkutu/moremi/body.png" alt=""></div>
           <div class="my-level" id="my-level">LEVEL 1</div><div class="graph my-gauge"><div class="graph-bar" id="my-gauge-bar" style="width:0%"></div></div><div class="bar-text my-gauge-text" id="my-gauge-text">0 / 1,000</div>
         </div>
       </div>
@@ -77,7 +81,7 @@
 
     <div class="dialog" id="RoomDiag" style="width:300px;height:410px"><div class="dialog-head"><div class="dialog-title">방 만들기</div><div class="closeBtn" data-close="RoomDiag"></div></div><div class="dialog-body">
       <div class="dialog-bar"><h4>방 제목</h4><input id="room-title" maxlength="20" value="로컬 연습방"></div>
-      <div class="dialog-bar"><h4>게임 유형</h4><select id="room-mode"><option value="classic">한국어 끝말잇기</option><option value="three">쿵쿵따</option><option value="reverse">앞말잇기</option><option value="typing">타자 대결</option></select></div>
+      <div class="dialog-bar"><h4>게임 유형</h4><select id="room-mode"><option value="classic">한국어 끝말잇기</option><option value="three">쿵쿵따</option><option value="reverse">앞말잇기</option><option value="typing">타자 대결</option><option value="japanese">일본어 끝말잇기</option></select></div>
       <div class="dialog-bar"><h4>라운드</h4><input id="room-round" type="number" min="1" max="10" value="5"></div>
       <div class="dialog-bar"><h4>라운드 시간</h4><select id="room-time"><option value="30">30초</option><option value="60" selected>60초</option><option value="90">90초</option><option value="120">120초</option></select></div>
       <div class="dialog-bar"><h4>턴 시간</h4><select id="turn-time"><option value="10">10초</option><option value="15" selected>15초</option><option value="20">20초</option><option value="30">30초</option></select></div>
@@ -99,7 +103,7 @@
 
     <div class="dialog" id="DictionaryDiag" style="width:400px;height:300px"><div class="dialog-head"><div class="dialog-title">사전</div><div class="closeBtn" data-close="DictionaryDiag"></div></div><div class="dialog-body"><div class="dialog-bar"><h4>단어</h4><input id="dict-input" style="width:283px" maxlength="30"></div><div class="dialog-bar" id="dict-output" style="height:195px;overflow-y:auto;color:#BBBBBB;background-color:#111111;padding:5px;box-sizing:border-box"></div><div class="dialog-bar tail-button"><button id="dict-search">검색</button></div></div></div>
 
-    <div class="dialog" id="HelpDiag" style="width:550px;height:330px"><div class="dialog-head"><div class="dialog-title">도움말</div><div class="closeBtn" data-close="HelpDiag"></div></div><div class="dialog-body static-help"><h3>KKuTu Static / Local</h3><p>원본 KKuTu의 화면 구조, CSS, 이미지, 캐릭터 리소스와 효과음을 그대로 사용하면서 서버 통신만 브라우저 로컬 처리로 바꾼 버전입니다.</p><p><b>끝말잇기</b>: 제시 글자로 시작하는 단어를 입력합니다. <b>쿵쿵따</b>: 3글자 단어만 사용할 수 있습니다. <b>앞말잇기</b>: 제시 글자로 끝나는 단어를 입력합니다.</p><p>로그인, 공용 DB, WebSocket 멀티플레이는 없으며 기록과 설정은 현재 브라우저의 localStorage에 저장됩니다.</p></div></div>
+    <div class="dialog" id="HelpDiag" style="width:550px;height:330px"><div class="dialog-head"><div class="dialog-title">도움말</div><div class="closeBtn" data-close="HelpDiag"></div></div><div class="dialog-body static-help"><h3>KKuTu Static / Local</h3><p>원본 KKuTu의 화면 구조, CSS, 이미지, 캐릭터 리소스와 효과음을 그대로 사용하면서 서버 통신만 브라우저 로컬 처리로 바꾼 버전입니다.</p><p><b>끝말잇기</b>: 제시 글자로 시작하는 단어를 입력합니다. <b>쿵쿵따</b>: 3글자 단어만 사용할 수 있습니다. <b>앞말잇기</b>: 제시 글자로 끝나는 단어를 입력합니다. <b>일본어 끝말잇기</b>: JMdict 읽기를 기준으로 이어가며 ん으로 끝나는 단어는 사용할 수 없습니다.</p><p>로그인, 공용 DB, WebSocket 멀티플레이는 없으며 기록과 설정은 현재 브라우저의 localStorage에 저장됩니다.</p></div></div>
 
     <div class="dialog" id="ResultDiag" style="width:400px;height:420px"><div class="dialog-head no-close"><div class="dialog-title">게임 결과</div></div><div class="dialog-body"><div class="result-board" id="ResultBoard"></div><div class="result-me"><div class="result-me-score" id="ResultScoreGain">이번 게임 +0</div><div class="result-me-money">LOCAL MODE</div><div class="result-me-level"><div class="result-me-level-head">LEVEL</div><div class="result-me-level-body" id="ResultLevel">1</div></div><div class="graph result-me-gauge"><div class="graph-bar result-me-before-bar" id="ResultGauge"></div></div><div class="result-me-score-text" id="ResultScoreText">0 / 1,000</div></div><div class="dialog-bar tail-button"><button id="result-ok">확인</button><button id="result-save">리플레이 저장</button></div></div></div>
   </main>

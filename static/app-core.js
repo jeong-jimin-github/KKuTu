@@ -17,12 +17,25 @@
   const STATIC_DB = window.KKUTU_STATIC_DB || null;
   const WORDS = STATIC_DB?.words ? STATIC_DB.words.split(String.fromCharCode(10)) : FALLBACK_WORDS;
   const WORD_META_DIGITS = STATIC_DB?.meta?.length === WORDS.length ? STATIC_DB.meta : '4'.repeat(WORDS.length);
-  const WORD_META = new Map();
-  const WORD_SET = new Set();
-  const WORDS_BY_FIRST = new Map();
-  const WORDS_BY_LAST = new Map();
-  function addWordIndex(index,key,word){ if(!key)return;const bucket=index.get(key);if(bucket)bucket.push(word);else index.set(key,[word]); }
+  const WORD_META = new Map(), WORD_SET = new Set(), WORDS_BY_FIRST = new Map(), WORDS_BY_LAST = new Map();
+  const FALLBACK_JA_WORDS = ['ねこ','ことば','ばしょ','よぞら','らっぱ','ぱんだ','だるま','まくら','らじお','おかし'];
+  const JA_WORDS = STATIC_DB?.jaWords ? STATIC_DB.jaWords.split(String.fromCharCode(10)) : FALLBACK_JA_WORDS;
+  const JA_READING_ROWS = STATIC_DB?.jaReadings ? STATIC_DB.jaReadings.split(String.fromCharCode(10)) : [];
+  const JA_WORD_INDEX = new Map(), JA_WORDS_BY_FIRST = new Map(), JA_PLAYABLE_WORDS = [];
+  const JA_SMALL={'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ','っ':'つ','ゕ':'か','ゖ':'け'};
+  const JA_VOWEL={
+    'あ':'あ','か':'あ','が':'あ','さ':'あ','ざ':'あ','た':'あ','だ':'あ','な':'あ','は':'あ','ば':'あ','ぱ':'あ','ま':'あ','や':'あ','ゃ':'あ','ら':'あ','わ':'あ','ゎ':'あ',
+    'い':'い','き':'い','ぎ':'い','し':'い','じ':'い','ち':'い','ぢ':'い','に':'い','ひ':'い','び':'い','ぴ':'い','み':'い','り':'い','ゐ':'い',
+    'う':'う','く':'う','ぐ':'う','す':'う','ず':'う','つ':'う','づ':'う','ぬ':'う','ふ':'う','ぶ':'う','ぷ':'う','む':'う','ゆ':'う','ゅ':'う','る':'う','ゔ':'う',
+    'え':'え','け':'え','げ':'え','せ':'え','ぜ':'え','て':'え','で':'え','ね':'え','へ':'え','べ':'え','ぺ':'え','め':'え','れ':'え','ゑ':'え',
+    'お':'お','こ':'お','ご':'お','そ':'お','ぞ':'お','と':'お','ど':'お','の':'お','ほ':'お','ぼ':'お','ぽ':'お','も':'お','よ':'お','ょ':'お','ろ':'お','を':'お','ん':'ん'};
+  function addWordIndex(index,key,word){if(!key)return;const bucket=index.get(key);if(bucket)bucket.push(word);else index.set(key,[word]);}
+  function toHiragana(text){return String(text||'').normalize('NFKC').replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60));}
+  function normalizeJaWord(text){return toHiragana(text).replace(/[ 　\t\r\n・･=＝\-‐‑‒–—―、。,.，．/／()（）［］\[\]{}｛｝<>＜＞「」『』【】"'＂＇]/g,'').replace(/[^ぁ-ゖ一-龯々〆〇ー]/g,'');}
+  function getJaStart(text){const ch=normalizeJaWord(text).charAt(0);return JA_SMALL[ch]||ch;}
+  function getJaChar(text){const word=normalizeJaWord(text);for(let i=word.length-1;i>=0;i--){const ch=word.charAt(i);if(ch==='ー')continue;if(word.charAt(i+1)==='ー')return JA_VOWEL[ch]||JA_SMALL[ch]||ch;return JA_SMALL[ch]||ch;}return '';}
   WORDS.forEach((word,i)=>{WORD_SET.add(word);WORD_META.set(word,Number(WORD_META_DIGITS[i]||0));addWordIndex(WORDS_BY_FIRST,word[0],word);addWordIndex(WORDS_BY_LAST,word.at(-1),word);});
+  JA_WORDS.forEach((word,i)=>{const reading=normalizeJaWord(JA_READING_ROWS[i]||word);if(!word||reading.length<2)return;JA_WORD_INDEX.set(word,{word,reading});if(getJaChar(reading)!=='ん'){JA_PLAYABLE_WORDS.push(word);addWordIndex(JA_WORDS_BY_FIRST,getJaStart(reading),word);}});
   const TYPING = [
     '아름다운 우리말을 빠르게 입력하세요','오늘도 즐겁게 끄투 한 판','끝말잇기는 어휘력과 순발력의 대결','친구와 함께 걷는 저녁 산책길',
     '반짝이는 별빛 아래 조용한 마을','빠르고 정확하게 문장을 입력해 보세요','여름 바다에서 시원한 바람이 분다','컴퓨터 앞에서 새로운 게임을 만든다'
@@ -32,18 +45,21 @@
     '백지장도 맞들면 낫다','세 살 버릇 여든까지 간다','원숭이도 나무에서 떨어진다','티끌 모아 태산'
   ];
   const MISSION_KO = ['가','나','다','라','마','바','사','아','자','차','카','타','파','하'];
+  const MISSION_JA = ['あ','い','う','え','お','か','き','く','け','こ','さ','し','す','せ','そ','た','ち','つ','て','と','な','に','ぬ','ね','の','は','ひ','ふ','へ','ほ','ま','み','む','め','も','や','ゆ','よ','ら','り','る','れ','ろ','わ'];
   const MODE_OPTIONS = {
     classic:['manner','injeong','mission','loanword','strict'],
     three:['manner','injeong','mission','loanword','strict','sami'],
     reverse:['manner','injeong','mission','loanword','strict'],
-    typing:['proverb']
+    typing:['proverb'],
+    japanese:['manner','injeong','mission']
   };
   const DEFAULT_ROOM_OPTIONS = {manner:false,injeong:false,mission:false,loanword:false,strict:false,sami:false,proverb:false};
   const MODES = {
     classic: { code: 'KSH', title: '한국어 끝말잇기', desc: '한국어 끝말잇기' },
     three: { code: 'KKT', title: '쿵쿵따', desc: '쿵쿵따 / 3글자' },
     reverse: { code: 'KAP', title: '앞말잇기', desc: '앞말잇기' },
-    typing: { code: 'KTY', title: '타자 대결', desc: '타자 대결' }
+    typing: { code: 'KTY', title: '타자 대결', desc: '타자 대결' },
+    japanese: { code: 'JSH', title: '일본어 끝말잇기', desc: '일본어 끝말잇기' }
   };
   const defaultStore = { nickname:'플레이어', botLevel:2, muteBGM:false, muteEffect:false, bestScore:0, bestChain:0, totalGames:0, totalWords:0 };
 
@@ -90,11 +106,11 @@
   function renderLobby(){
     $('UserList').innerHTML=`<div class="users-item"><div class="jt-image users-image" style="background-image:url('./img/kkutu/moremi/body.png')"></div><div class="users-level level-sprite"></div><div class="users-name ellipse">${escapeHTML(store.nickname)}</div></div><div class="users-item"><div class="jt-image users-image" style="background-image:url('./img/kkutu/robot.png')"></div><div class="users-level level-sprite"></div><div class="users-name ellipse">로컬 로봇</div></div>`;
     $$('#UserList .level-sprite').forEach((el,i)=>setLevelSprite(el,i?2800:store.bestScore));
-    const p=[['classic','로컬 끝말잇기'],['three','로컬 쿵쿵따'],['reverse','로컬 앞말잇기'],['typing','로컬 타자 대결']];
+    const p=[['classic','로컬 끝말잇기'],['three','로컬 쿵쿵따'],['reverse','로컬 앞말잇기'],['typing','로컬 타자 대결'],['japanese','로컬 일본어 끝말잇기']];
     $('RoomList').innerHTML=p.map(([m,t],i)=>roomCard(i+1,t,m)).join('');
     $$('#RoomList .rooms-item').forEach(el=>el.onclick=()=>{room={...room,id:+el.dataset.room,title:el.dataset.title,mode:el.dataset.mode};showView('room');notice(`${room.title}에 입장했습니다.`)}); updateMe();
   }
-  function roomCard(id,title,mode){ return `<div class="rooms-item" data-room="${id}" data-title="${escapeHTML(title)}" data-mode="${mode}"><div class="rooms-channel channel-${id}"></div><div class="rooms-number">${id}</div><div class="rooms-title ellipse">${escapeHTML(title)}</div><div class="rooms-limit">2 / 8</div><div style="width:270px"><div class="rooms-mode">${MODES[mode].desc} / 로봇 연습</div><div class="rooms-round">라운드 ${room.rounds}</div><div class="rooms-time">${room.roundTime}초</div></div><div class="rooms-lock"><i class="fa fa-unlock"></i></div></div>`; }
+  function roomCard(id,title,mode){ return `<div class="rooms-item" data-room="${id}" data-title="${escapeHTML(title)}" data-mode="${mode}"><div class="rooms-channel channel-${((id-1)%4)+1}"></div><div class="rooms-number">${id}</div><div class="rooms-title ellipse">${escapeHTML(title)}</div><div class="rooms-limit">2 / 8</div><div class="rooms-info"><div class="rooms-mode">${MODES[mode].desc} / 로봇 연습</div><div class="rooms-round">라운드 ${room.rounds}</div><div class="rooms-time">${room.roundTime}초</div></div><div class="rooms-lock"><i class="fa fa-unlock"></i></div></div>`; }
   function renderRoomTitle(target){ target.innerHTML=`<h5 class="room-head-number">[${room.id}]</h5><h5 class="room-head-title">${escapeHTML(room.title)}</h5><h5 class="room-head-mode">${escapeHTML(MODES[room.mode].title)} / 로봇 연습</h5><h5 class="room-head-limit">2 / 8</h5><h5 class="room-head-round">라운드 ${room.rounds}</h5><h5 class="room-head-time">${room.roundTime}초</h5>`; }
   function renderRoom(){ renderRoomTitle($('RoomTitleBar')); $('RoomUsers').innerHTML=roomUser('me',store.nickname,false)+roomUser('bot',`Lv.${store.botLevel} 로봇`,true); $$('#RoomUsers .room-user-level').forEach((el,i)=>setLevelSprite(el,i?2800+store.botLevel*1800:store.bestScore)); }
   function roomUser(id,name,bot){ const body=bot?'./img/kkutu/moremi/robot.png':'./img/kkutu/moremi/body.png'; return `<div class="room-user" id="room-user-${id}"><div class="moremi room-user-image"><img class="moremies moremi-body" src="${body}" alt=""></div><div class="room-user-stat"><div class="room-user-ready room-user-readied">${id==='me'?'방장':'준비'}</div><div class="room-user-team team-0">개인</div></div><div class="room-user-title"><div class="room-user-level"></div><div class="room-user-name">${escapeHTML(name)}</div></div></div>`; }
@@ -125,29 +141,41 @@
   function startTypingTurn(){ if(!game||game.over)return;game.turn='me';setCurrent('me');$('GameInputWrap').classList.add('static-active');const input=$('game-input');input.readOnly=false;input.value='';const source=roomOptionOn('proverb')?PROVERBS:TYPING;game.typingPrompt=source[game.typingIndex++%source.length];$('GameDisplay').textContent=game.typingPrompt;input.placeholder='제시된 문장을 그대로 입력하세요.';input.focus({preventScroll:true});startTurnTimer('me'); }
 
   function roomOptionOn(key,mode=room.mode){ return Boolean(room.options?.[key]&&(MODE_OPTIONS[mode]||[]).includes(key)); }
-  function randomMission(){ return MISSION_KO[Math.floor(Math.random()*MISSION_KO.length)]; }
+  function randomMission(){ const list=game?.mode==='japanese'?MISSION_JA:MISSION_KO;return list[Math.floor(Math.random()*list.length)]; }
   function currentWordLength(){ return game?.mode==='three'?(roomOptionOn('sami')?game.wordLength:3):0; }
   function nextWordLength(){ const now=currentWordLength();return game?.mode==='three'&&roomOptionOn('sami')?(now===3?2:3):now; }
   function advanceWordLength(){ if(game?.mode==='three'&&roomOptionOn('sami'))game.wordLength=nextWordLength();updateMissionItem(); }
   function updateMissionItem(){ if(!game)return;const parts=[];if(game.mode==='three')parts.push(`${currentWordLength()}글자`);if(roomOptionOn('mission')&&game.mission)parts.push(`미션 ${game.mission}`);$('MissionItem').textContent=parts.join(' · '); }
-  function wordAllowed(word,lengthOverride=0){ const meta=WORD_META.get(word);if(meta===undefined)return false;if(!roomOptionOn('injeong')&&(meta&1))return false;if(roomOptionOn('loanword')&&(meta&2))return false;if(roomOptionOn('strict')&&!(meta&4))return false;const wanted=lengthOverride||currentWordLength();return !wanted||word.length===wanted; }
-  function wordBucket(required=game?.required||''){ if(!required)return WORDS;return (game?.mode==='reverse'?WORDS_BY_LAST:WORDS_BY_FIRST).get(required)||[]; }
-  function hasContinuation(word){ const required=nextRequired(word),wanted=nextWordLength(),bucket=(game.mode==='reverse'?WORDS_BY_LAST:WORDS_BY_FIRST).get(required)||[];return bucket.some(w=>w!==word&&!game.used.has(w)&&wordAllowed(w,wanted)); }
-  function missionBonus(word,base){ if(!roomOptionOn('mission')||!game.mission)return 0;const count=word.split(game.mission).length-1;return count?Math.round(base*.5*count):0; }
+  function isJapaneseMode(){ return (game?.mode||room.mode)==='japanese'; }
+  function japaneseEntry(word){ return JA_WORD_INDEX.get(word); }
+  function ruleText(word){ return isJapaneseMode()?(japaneseEntry(word)?.reading||normalizeJaWord(word)):word; }
+  function wordAllowed(word,lengthOverride=0){
+    if(isJapaneseMode()){ const entry=japaneseEntry(word);return !!entry&&entry.reading.length>=2&&getJaChar(entry.reading)!=='ん'; }
+    const meta=WORD_META.get(word);if(meta===undefined)return false;if(!roomOptionOn('injeong')&&(meta&1))return false;if(roomOptionOn('loanword')&&(meta&2))return false;if(roomOptionOn('strict')&&!(meta&4))return false;const wanted=lengthOverride||currentWordLength();return !wanted||word.length===wanted;
+  }
+  function wordBucket(required=game?.required||''){ if(isJapaneseMode())return required?(JA_WORDS_BY_FIRST.get(required)||[]):JA_PLAYABLE_WORDS;if(!required)return WORDS;return (game?.mode==='reverse'?WORDS_BY_LAST:WORDS_BY_FIRST).get(required)||[]; }
+  function continuationBucket(required){ return isJapaneseMode()?(JA_WORDS_BY_FIRST.get(required)||[]):((game.mode==='reverse'?WORDS_BY_LAST:WORDS_BY_FIRST).get(required)||[]); }
+  function hasContinuation(word){ const required=nextRequired(word),wanted=nextWordLength(),bucket=continuationBucket(required);return bucket.some(w=>w!==word&&!game.used.has(w)&&wordAllowed(w,wanted)); }
+  function missionBonus(word,base){ if(!roomOptionOn('mission')||!game.mission)return 0;const count=ruleText(word).split(game.mission).length-1;return count?Math.round(base*.5*count):0; }
   function scoreAcceptedWord(word){ const base=scoreWord(word),bonus=missionBonus(word,base);if(bonus){playSound('mission');game.mission=randomMission();}return base+bonus; }
 
   function handleGameInput(){
     if(!game||game.over||game.turn!=='me')return;const input=$('game-input'),raw=input.value.trim();if(!raw)return;
     if(game.mode==='typing'){if(raw!==game.typingPrompt){playSound('fail');flashFail('문장이 일치하지 않습니다.');return;}stopTurnTimer();const gain=Math.round(40+60*(game.turnRemain/game.turnTime));game.score.me+=gain;game.chain++;game.bestChain=Math.max(game.bestChain,game.chain);pushHistory(raw,'me');updateScores();playSound('mission');setTimeout(startTypingTurn,250);return;}
-    const word=raw.replace(/\s+/g,''),error=validateWord(word);if(error){playSound('fail');flashFail(error);return;}stopTurnTimer();game.used.add(word);game.score.me+=scoreAcceptedWord(word);game.chain++;game.bestChain=Math.max(game.bestChain,game.chain);game.required=nextRequired(word);advanceWordLength();$('Chain').textContent=String(game.chain);pushDisplay(word,()=>{pushHistory(word,'me');updateScores();startBotTurn();});
+    const word=isJapaneseMode()?normalizeJaWord(raw):raw.replace(/\s+/g,''),error=validateWord(word);if(error){playSound('fail');flashFail(error);return;}stopTurnTimer();game.used.add(word);game.score.me+=scoreAcceptedWord(word);game.chain++;game.bestChain=Math.max(game.bestChain,game.chain);game.required=nextRequired(word);advanceWordLength();$('Chain').textContent=String(game.chain);pushDisplay(word,()=>{pushHistory(word,'me');updateScores();startBotTurn();});
   }
-  function validateWord(word){ if(word.length<2)return '두 글자 이상의 단어를 입력하세요.';const meta=WORD_META.get(word);if(meta===undefined)return '원본 KKuTu 사전에 없는 단어입니다.';if(game.used.has(word))return '이미 사용한 단어입니다.';if(game.required){if(game.mode==='reverse'&&word.at(-1)!==game.required)return `'${game.required}'(으)로 끝나는 단어를 입력하세요.`;if(game.mode!=='reverse'&&word[0]!==game.required)return `'${game.required}'(으)로 시작하는 단어를 입력하세요.`;}if(!roomOptionOn('injeong')&&(meta&1))return '어인정 단어입니다. 방 설정에서 어인정을 켜 주세요.';if(roomOptionOn('loanword')&&(meta&2))return '우리말 규칙에서는 외래어를 사용할 수 없습니다.';if(roomOptionOn('strict')&&!(meta&4))return '깐깐 규칙에서 사용할 수 없는 단어입니다.';const wanted=currentWordLength();if(wanted&&word.length!==wanted)return `${wanted}글자 단어를 입력하세요.`;if(roomOptionOn('manner')&&!hasContinuation(word))return '매너 규칙에서는 이어갈 수 없는 한방 단어를 사용할 수 없습니다.';return ''; }
-  function nextRequired(word){ return game.mode==='reverse'?word[0]:word.at(-1); }
-  function scoreWord(word){ return Math.round(word.length*12+45*(game.turnRemain/game.turnTime)); }
+  function validateWord(word){
+    if(isJapaneseMode()){
+      const entry=japaneseEntry(word);if(!entry)return '원본 일본어(JMdict) 사전에 없는 단어입니다.';if(entry.reading.length<2)return '두 글자 이상의 일본어 어휘를 입력하세요.';if(game.used.has(word))return '이미 사용한 단어입니다.';if(getJaChar(entry.reading)==='ん')return 'ん으로 끝나는 단어는 사용할 수 없습니다.';if(game.required&&getJaStart(entry.reading)!==game.required)return `'${game.required}'로 시작하는 읽기의 단어를 입력하세요.`;if(roomOptionOn('manner')&&!hasContinuation(word))return '매너 규칙에서는 이어갈 수 없는 한방 단어를 사용할 수 없습니다.';return '';
+    }
+    if(word.length<2)return '두 글자 이상의 단어를 입력하세요.';const meta=WORD_META.get(word);if(meta===undefined)return '원본 KKuTu 사전에 없는 단어입니다.';if(game.used.has(word))return '이미 사용한 단어입니다.';if(game.required){if(game.mode==='reverse'&&word.at(-1)!==game.required)return `'${game.required}'(으)로 끝나는 단어를 입력하세요.`;if(game.mode!=='reverse'&&word[0]!==game.required)return `'${game.required}'(으)로 시작하는 단어를 입력하세요.`;}if(!roomOptionOn('injeong')&&(meta&1))return '어인정 단어입니다. 방 설정에서 어인정을 켜 주세요.';if(roomOptionOn('loanword')&&(meta&2))return '우리말 규칙에서는 외래어를 사용할 수 없습니다.';if(roomOptionOn('strict')&&!(meta&4))return '깐깐 규칙에서 사용할 수 없는 단어입니다.';const wanted=currentWordLength();if(wanted&&word.length!==wanted)return `${wanted}글자 단어를 입력하세요.`;if(roomOptionOn('manner')&&!hasContinuation(word))return '매너 규칙에서는 이어갈 수 없는 한방 단어를 사용할 수 없습니다.';return '';
+  }
+  function nextRequired(word){ if(isJapaneseMode())return getJaChar(japaneseEntry(word)?.reading||word);return game.mode==='reverse'?word[0]:word.at(-1); }
+  function scoreWord(word){ return Math.round(ruleText(word).length*12+45*(game.turnRemain/game.turnTime)); }
   function pushDisplay(word,done){ $('GameDisplay').innerHTML='';const speed=Math.min(10,Math.max(0,2+Math.floor(word.length/2))),soundKey=word.length>=10?'Al':`As${speed}`;Array.from(word).forEach((ch,i)=>{const t=setTimeout(()=>{const el=document.createElement('div');el.className='display-text';el.textContent=ch;el.style.fontSize='36px';el.style.marginTop='-6px';$('GameDisplay').appendChild(el);playSound(soundKey);requestAnimationFrame(()=>{el.style.transition='all 100ms ease';el.style.fontSize='20px';el.style.marginTop='0';});},i*80);game.fxTimers.push(t);});game.fxTimers.push(setTimeout(()=>{if(game.mode==='three')playSound('kung');playSound(`K${speed}`);done?.();},Math.max(180,word.length*80+80))); }
   function pushHistory(word,who){ game.history.push({word,who,at:Date.now()});const item=document.createElement('div');item.className='ellipse history-item';item.style.width='0';item.innerHTML=`${escapeHTML(word)}<div class="history-mean ellipse">${who==='me'?escapeHTML(store.nickname):'로컬 로봇'}</div>`;$('History').prepend(item);requestAnimationFrame(()=>{item.style.transition='width 300ms ease';item.style.width='200px';});while($('History').children.length>6)$('History').lastElementChild.remove(); }
   function botPool(){ return wordBucket().filter(w=>!game.used.has(w)&&wordAllowed(w)&&(!roomOptionOn('manner')||hasContinuation(w))); }
-  function botFutureCount(word){ const required=nextRequired(word),wanted=nextWordLength(),bucket=(game.mode==='reverse'?WORDS_BY_LAST:WORDS_BY_FIRST).get(required)||[];let count=0;for(const w of bucket)if(w!==word&&!game.used.has(w)&&wordAllowed(w,wanted))count++;return count; }
+  function botFutureCount(word){ const required=nextRequired(word),wanted=nextWordLength(),bucket=continuationBucket(required);let count=0;for(const w of bucket)if(w!==word&&!game.used.has(w)&&wordAllowed(w,wanted))count++;return count; }
   function startBotTurn(){ if(!game||game.over)return;game.turn='bot';setCurrent('bot');$('GameInputWrap').classList.remove('static-active');$('GameDisplay').textContent=game.required||'...';startTurnTimer('bot');const delay=[2200,1700,1100,650,350][store.botLevel]||1100;game.botTimer=setTimeout(()=>{if(!game||game.over||game.turn!=='bot')return;const pool=botPool();if(!pool.length){stopTurnTimer();bombUser('bot');playSound('timeout');winRoundByBotFail();return;}const candidates=pool.sort((a,b)=>store.botLevel>=3?botFutureCount(b)-botFutureCount(a):Math.random()-.5),word=candidates[Math.floor(Math.random()*Math.min(candidates.length,store.botLevel>=3?3:candidates.length))];stopTurnTimer();game.used.add(word);game.score.bot+=scoreAcceptedWord(word);game.chain++;game.required=nextRequired(word);advanceWordLength();$('Chain').textContent=String(game.chain);pushDisplay(word,()=>{pushHistory(word,'bot');updateScores();startPlayerTurn();});},delay); }
   function bombUser(id){ const el=$(`game-user-${id}`);el?.classList.add('game-user-bomb','static-bomb');setTimeout(()=>el?.classList.remove('static-bomb'),800); }
   function winRoundByBotFail(){ if(!game||game.over)return;game.score.me+=150;updateScores();playSound('success');$('GameDisplay').textContent='라운드 승리!';endRound('로봇이 단어를 잇지 못했습니다.'); }
@@ -166,13 +194,22 @@
   function applyRoomDialog(){ room.title=$('room-title').value.trim()||'로컬 연습방';room.mode=$('room-mode').value;room.rounds=Math.max(1,Math.min(10,+$('room-round').value||5));room.roundTime=+$('room-time').value||60;room.turnTime=+$('turn-time').value||15;room.options={...DEFAULT_ROOM_OPTIONS};Object.keys(DEFAULT_ROOM_OPTIONS).forEach(key=>{room.options[key]=Boolean($(`room-${key}`)?.checked);});closeDialogs();if(view==='lobby')showView('room');else renderRoom(); }
   function openSettings(){ $('nickname').value=store.nickname;$('mute-bgm').checked=store.muteBGM;$('mute-effect').checked=store.muteEffect;showDialog('SettingDiag'); }
   function saveSettings(){ store.nickname=($('nickname').value.trim()||'플레이어').slice(0,14);store.muteBGM=$('mute-bgm').checked;store.muteEffect=$('mute-effect').checked;saveStore();refreshVolumes();closeDialogs();if(view==='lobby')renderLobby();if(view==='room')renderRoom(); }
-  function searchDictionary(){ const q=$('dict-input').value.trim().replace(/\s+/g,''),out=$('dict-output');if(!q){out.innerHTML='<div class="dict-no">검색할 단어를 입력하세요.</div>';return;}const exact=WORD_SET.has(q),related=WORDS.filter(w=>w.includes(q)).slice(0,30);if(!exact&&!related.length){out.innerHTML=`<div class="dict-no">'${escapeHTML(q)}'은(는) 로컬 사전에 없습니다.</div>`;return;}out.innerHTML=(exact?[`<div class="dict-hit"><b>${escapeHTML(q)}</b><br>원본 KKuTu 정적 사전에 등록된 단어입니다.</div>`]:[]).concat(related.filter(w=>w!==q).map(w=>`<div class="dict-hit">${escapeHTML(w)}</div>`)).join(''); }
+  function searchDictionary(){
+    const raw=$('dict-input').value.trim(),out=$('dict-output');if(!raw){out.innerHTML='<div class="dict-no">검색할 단어를 입력하세요.</div>';return;}
+    const jq=normalizeJaWord(raw),jaMode=room.mode==='japanese'||/[ぁ-ゖァ-ヶ一-龯々〆〇ー]/.test(raw);
+    if(jaMode){
+      const exact=JA_WORD_INDEX.get(jq),related=JA_WORDS.filter(w=>w.includes(jq)||(JA_WORD_INDEX.get(w)?.reading||'').includes(jq)).slice(0,30);
+      if(!exact&&!related.length){out.innerHTML=`<div class="dict-no">'${escapeHTML(raw)}'은(는) 일본어 로컬 사전에 없습니다.</div>`;return;}
+      out.innerHTML=(exact?[`<div class="dict-hit"><b>${escapeHTML(exact.word)}</b><br>읽기: ${escapeHTML(exact.reading)} / JMdict 정적 사전에 등록된 단어입니다.</div>`]:[]).concat(related.filter(w=>w!==jq).map(w=>{const e=JA_WORD_INDEX.get(w);return `<div class="dict-hit">${escapeHTML(w)}${e&&e.reading!==w?` <small>(${escapeHTML(e.reading)})</small>`:''}</div>`;})).join('');return;
+    }
+    const q=raw.replace(/\s+/g,''),exact=WORD_SET.has(q),related=WORDS.filter(w=>w.includes(q)).slice(0,30);if(!exact&&!related.length){out.innerHTML=`<div class="dict-no">'${escapeHTML(q)}'은(는) 로컬 사전에 없습니다.</div>`;return;}out.innerHTML=(exact?[`<div class="dict-hit"><b>${escapeHTML(q)}</b><br>원본 KKuTu 정적 사전에 등록된 단어입니다.</div>`]:[]).concat(related.filter(w=>w!==q).map(w=>`<div class="dict-hit">${escapeHTML(w)}</div>`)).join('');
+  }
   function initDragDialogs(){ $$('.dialog-title').forEach(title=>title.addEventListener('mousedown',e=>{const d=title.closest('.dialog');if(!d)return;d.classList.add('dialog-front');const r=d.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top,move=ev=>{d.style.left=`${Math.max(0,ev.clientX-dx)}px`;d.style.top=`${Math.max(30,ev.clientY-dy)}px`;},up=()=>{removeEventListener('mousemove',move);removeEventListener('mouseup',up)};addEventListener('mousemove',move);addEventListener('mouseup',up);})); }
   function bind(){
     $('NewRoomBtn').onclick=()=>openRoomDialog(false);$('QuickRoomBtn').onclick=()=>{const modes=Object.keys(MODES);room={...room,id:Math.floor(Math.random()*4)+1,mode:modes[Math.floor(Math.random()*modes.length)],title:'빠른 로컬 연습방'};showView('room');notice('빠른 입장으로 로컬 연습방에 들어왔습니다.');};$('SetRoomBtn').onclick=()=>openRoomDialog(true);$('room-mode').onchange=refreshRoomOptions;$('PracticeBtn').onclick=()=>{$('practice-level').value=String(store.botLevel);showDialog('PracticeDiag')};$('StartBtn').onclick=startGame;
     $('ExitBtn').onclick=()=>{if(view==='game'){if(!confirm('게임을 종료하고 방으로 돌아가시겠습니까?'))return;clearGameTimers();stopAllSounds();audioUnlocked=true;showView('room')}else showView('lobby')};$('SettingBtn').onclick=openSettings;$('HelpBtn').onclick=()=>showDialog('HelpDiag');$('DictionaryBtn').onclick=()=>showDialog('DictionaryDiag');$('room-ok').onclick=applyRoomDialog;$('practice-ok').onclick=()=>{store.botLevel=+$('practice-level').value;saveStore();closeDialogs();if(view==='room')renderRoom()};$('setting-ok').onclick=saveSettings;
     $('reset-record').onclick=()=>{if(confirm('로컬 기록을 초기화하시겠습니까?')){store.bestScore=store.bestChain=store.totalGames=store.totalWords=0;saveStore()}};$('dict-search').onclick=searchDictionary;$('dict-input').addEventListener('keydown',e=>{if(e.key==='Enter')searchDictionary()});$('result-ok').onclick=()=>{closeDialogs();stopAllSounds();audioUnlocked=true;showView('room')};$('result-save').onclick=saveReplay;$$('.closeBtn[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).style.display='none');bindChat('Talk','ChatBtn','Chat');bindChat('RoomTalk','RoomChatBtn','RoomChat');bindChat('GameTalk','GameChatBtn','GameChat');$('game-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();handleGameInput();}});
   }
-  function init(){ loadSounds();bind();initDragDialogs();updateMe();renderLobby();setMenu('lobby');$('Loading').style.display='none';addChat('Chat','알림',`정적 로컬 모드입니다. 원본 KKuTu 사전 ${commify(WORDS.length)}개 단어를 사용합니다.`,true);setTimeout(()=>{const intro=$('Intro');intro.style.transition='opacity 800ms ease';intro.style.opacity='0';setTimeout(()=>intro.style.display='none',850);},900);addEventListener('pointerdown',unlockAudio,{once:true});addEventListener('keydown',unlockAudio,{once:true}); }
+  function init(){ loadSounds();bind();initDragDialogs();updateMe();renderLobby();setMenu('lobby');$('Loading').style.display='none';addChat('Chat','알림',`정적 로컬 모드입니다. 한국어 ${commify(WORDS.length)}개 + 일본어 ${commify(JA_WORDS.length)}개 사전 항목을 사용합니다.`,true);setTimeout(()=>{const intro=$('Intro');intro.style.transition='opacity 800ms ease';intro.style.opacity='0';setTimeout(()=>intro.style.display='none',850);},900);addEventListener('pointerdown',unlockAudio,{once:true});addEventListener('keydown',unlockAudio,{once:true}); }
   init();
 })();
